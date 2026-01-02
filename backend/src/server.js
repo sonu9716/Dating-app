@@ -74,13 +74,48 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  console.log(`📱 WebSocket ready for real-time chat`);
-  console.log(`🔒 E2E encryption enabled with Signal Protocol`);
-  console.log(`🗄️  PostgreSQL database connected`);
-  console.log(`💾 Redis cache ready`);
-});
+// Database Migration (Auto-run on startup for Render)
+const fs = require('fs');
+const path = require('path');
+const { pool } = require('./utils/db');
+
+async function runMigration() {
+  try {
+    console.log('🔄 Checking database migrations...');
+    const schemaPath = path.join(__dirname, '../schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+
+    // Split schema into individual statements (basic splitting)
+    const statements = schema.split(';').filter(s => s.trim().length > 0);
+
+    for (const statement of statements) {
+      try {
+        await pool.query(statement);
+      } catch (err) {
+        // Ignore "relation already exists" or simple errors if table exists
+        if (err.code !== '42P07') { // 42P07 is duplicate_table in Postgres
+          console.warn(`⚠️ Migration warning: ${err.message}`);
+        }
+      }
+    }
+    console.log('✅ Database migration completed');
+  } catch (err) {
+    console.error('❌ Migration failed:', err.message);
+  }
+}
+
+// Start Server with Migration
+(async () => {
+  await runMigration();
+
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📱 WebSocket ready for real-time chat`);
+    console.log(`🔒 E2E encryption enabled with Signal Protocol`);
+    console.log(`🗄️  PostgreSQL database connected`);
+    console.log(`💾 Redis cache ready`);
+  });
+})();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
