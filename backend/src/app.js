@@ -58,6 +58,7 @@ app.use('/api/matches', require('./routes/matches'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/swipes', require('./routes/swipes'));
 app.use('/api/safety', require('./routes/safety'));
+app.use('/api/seed', require('./routes/seed'));
 
 // 404 Handler
 app.use((req, res) => {
