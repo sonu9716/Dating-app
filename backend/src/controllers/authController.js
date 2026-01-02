@@ -1,9 +1,10 @@
+```javascript
 const { pool } = require('../utils/db');
 const bcrypt = require('bcryptjs');
 const { generateToken, generateRefreshToken, verifyToken } = require('../utils/jwt');
 
 exports.signup = async (req, res) => {
-    let { email, password, firstName, lastName, username, name } = req.body;
+    let { email, password, firstName, lastName, username, name, age, gender, bio, interests, location } = req.body;
 
     // Handle single "name" field from frontend (e.g. from SignupScreen.js)
     if (!firstName && !lastName && name) {
@@ -28,8 +29,12 @@ exports.signup = async (req, res) => {
         const finalUsername = username || email.split('@')[0] + Math.floor(Math.random() * 1000);
 
         const newUser = await pool.query(
-            'INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, username',
-            [email, hashedPassword, firstName, lastName, finalUsername]
+            `INSERT INTO users(
+    email, password_hash, first_name, last_name, username,
+    age, gender, bio, interests, location
+) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING * `,
+            [email, hashedPassword, firstName, lastName, finalUsername, age, gender, bio, interests || [], location]
         );
 
         const user = newUser.rows[0];
@@ -43,10 +48,16 @@ exports.signup = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                name: `${user.first_name} ${user.last_name}`,
+                name: `${ user.first_name } ${ user.last_name } `,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                username: user.username
+                username: user.username,
+                age: user.age,
+                gender: user.gender,
+                bio: user.bio,
+                photos: user.photos || [],
+                location: user.location,
+                interests: user.interests
             }
         });
     } catch (err) {
@@ -80,9 +91,16 @@ exports.login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
+                name: `${ user.first_name } ${ user.last_name } `,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                username: user.username
+                username: user.username,
+                age: user.age,
+                gender: user.gender,
+                bio: user.bio,
+                photos: user.photos || [],
+                location: user.location,
+                interests: user.interests
             }
         });
     } catch (err) {
