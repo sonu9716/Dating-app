@@ -35,8 +35,8 @@ const generalLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 100,
   message: 'Too many authentication attempts'
 });
 
