@@ -244,3 +244,15 @@ exports.deletePhoto = async (req, res) => {
         res.status(500).json({ error: 'Server error deleting photo' });
     }
 };
+exports.debugDiscovery = async (req, res) => {
+    try {
+        const result = await pool.query('SELECT count(*) FROM users');
+        const users = await pool.query('SELECT id, first_name, email FROM users LIMIT 5');
+        res.json({
+            count: result.rows[0].count,
+            sample: users.rows
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};

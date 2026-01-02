@@ -104,9 +104,12 @@ async function runMigration() {
   }
 }
 
-// Start Server with Migration
+// Start Server with Migration and Seeding
+const { seedGenZUsers } = require('./utils/seeder');
+
 (async () => {
   await runMigration();
+  await seedGenZUsers();
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);

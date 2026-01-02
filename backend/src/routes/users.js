@@ -4,6 +4,9 @@ const auth = require('../middleware/auth');
 const { getProfile, updateProfile, getDiscovery, getPreferences, updatePreferences, uploadPhoto, deletePhoto } = require('../controllers/userController');
 const upload = require('../middleware/upload');
 
+// Public debug route
+router.get('/debug', require('../controllers/userController').debugDiscovery);
+
 // All user routes are protected
 router.use(auth);
 
