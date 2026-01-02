@@ -5,7 +5,7 @@
 
 import React, { createContext, useReducer, useEffect } from 'react';
 import { secureStorage, appStorage } from '../utils/storage';
-import { authAPI } from '../utils/api';
+import { authAPI, userAPI } from '../utils/api';
 import { socketEmitters } from '../utils/socket';
 
 export const AuthContext = createContext();
@@ -90,8 +90,8 @@ export function AuthProvider({ children }) {
         const token = await secureStorage.getToken();
         if (token) {
           // Verify token is still valid
-          const user = await authAPI.getProfile();
-          dispatch({ type: 'RESTORE_TOKEN', payload: user.data });
+          const response = await userAPI.getProfile();
+          dispatch({ type: 'RESTORE_TOKEN', payload: response.data.data });
           socketEmitters.authenticate(token);
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: null });
@@ -161,12 +161,23 @@ export function AuthProvider({ children }) {
     updateProfile: async (profileData) => {
       try {
         const response = await userAPI.updateProfile(profileData);
-        dispatch({ type: 'UPDATE_PROFILE', payload: response.data });
+        dispatch({ type: 'UPDATE_PROFILE', payload: response.data.data });
         return { success: true };
       } catch (error) {
         const message = error.response?.data?.message || 'Update failed';
         dispatch({ type: 'SET_ERROR', payload: message });
         return { success: false, error: message };
+      }
+    },
+
+    refreshProfile: async () => {
+      try {
+        const response = await userAPI.getProfile();
+        dispatch({ type: 'UPDATE_PROFILE', payload: response.data.data });
+        return { success: true };
+      } catch (error) {
+        console.error('Refresh profile error:', error);
+        return { success: false };
       }
     },
 

@@ -27,15 +27,15 @@ export default function Loading({ visible = false, message = 'Loading...' }) {
           style={{
             backgroundColor: COLORS.bgPrimary,
             borderRadius: 12,
-            paddingVertical: SPACING,
-            paddingHorizontal: SPACING,
+            paddingVertical: SPACING[4],
+            paddingHorizontal: SPACING[4],
             alignItems: 'center',
           }}
         >
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text
             style={{
-              marginTop: SPACING,
+              marginTop: SPACING[4],
               color: COLORS.textSecondary,
               fontSize: 14,
             }}

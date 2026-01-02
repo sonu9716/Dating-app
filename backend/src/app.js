@@ -13,7 +13,7 @@ app.use(compression());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -22,6 +22,10 @@ app.use(cors({
 // Body Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Static Files
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Rate Limiting
 const generalLimiter = rateLimit({
@@ -47,12 +51,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Routes (to be created)
-// app.use('/api/auth', authLimiter, require('./routes/auth'));
-// app.use('/api/users', require('./routes/users'));
-// app.use('/api/matches', require('./routes/matches'));
-// app.use('/api/messages', require('./routes/messages'));
-// app.use('/api/swipes', require('./routes/swipes'));
+// Routes
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/matches', require('./routes/matches'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/swipes', require('./routes/swipes'));
+app.use('/api/safety', require('./routes/safety'));
 
 // 404 Handler
 app.use((req, res) => {
@@ -65,10 +70,10 @@ app.use((req, res) => {
 // Error Handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
-  
+
   const status = err.status || 500;
   const message = err.message || 'Internal server error';
-  
+
   res.status(status).json({
     error: message,
     status,

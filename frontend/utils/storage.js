@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const storage = {
+export const secureStorage = {
   async setToken(token) {
     try {
       await SecureStore.setItemAsync('userToken', token);
@@ -26,6 +26,23 @@ export const storage = {
     }
   },
 
+  async setRefreshToken(token) {
+    try {
+      await SecureStore.setItemAsync('refreshToken', token);
+    } catch (err) {
+      console.error('Failed to save refresh token:', err);
+    }
+  },
+
+  async getRefreshToken() {
+    try {
+      return await SecureStore.getItemAsync('refreshToken');
+    } catch (err) {
+      console.error('Failed to get refresh token:', err);
+      return null;
+    }
+  },
+
   async setUser(user) {
     try {
       await SecureStore.setItemAsync('user', JSON.stringify(user));
@@ -47,6 +64,7 @@ export const storage = {
   async clearAll() {
     try {
       await SecureStore.deleteItemAsync('userToken');
+      await SecureStore.deleteItemAsync('refreshToken');
       await SecureStore.deleteItemAsync('user');
     } catch (err) {
       console.error('Failed to clear storage:', err);
@@ -54,4 +72,6 @@ export const storage = {
   }
 };
 
-export default storage;
+export const appStorage = secureStorage;
+
+export default secureStorage;

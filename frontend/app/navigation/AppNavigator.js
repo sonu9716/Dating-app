@@ -6,94 +6,63 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../../utils/theme';
 
-import { COLORS, SPACING, TYPOGRAPHY } from '../utils/theme';
-import HomeScreen from '../screens/HomeScreen';
-import ChatListScreen from '../screens/ChatListScreen';
-import ChatScreen from '../screens/ChatScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+// Screens
+import HomeScreen from '../../screens/HomeScreen';
+import ZenzDatingScreen from '../../screens/ZenzDatingScreen';
+import ChatListScreen from '../../screens/ChatListScreen';
+import ChatScreen from '../../screens/ChatScreen';
+import ProfileScreen from '../../screens/ProfileScreen';
+import EditProfileScreen from '../../screens/EditProfileScreen';
+import PhotosScreen from '../../screens/PhotosScreen';
+import PreferencesScreen from '../../screens/PreferencesScreen';
+import SettingsScreen from '../../screens/SettingsScreen';
+import SafetyCenterScreen from '../../screens/SafetyCenterScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Home Stack
+// Stacks
 function HomeStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen name="HomeMain" component={HomeScreen} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Discovery" component={HomeScreen} />
+      <Stack.Screen name="Preferences" component={PreferencesScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="SafetyCenter" component={SafetyCenterScreen} />
     </Stack.Navigator>
   );
 }
 
-// Chat Stack
+function ZenzStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ZenzMain" component={ZenzDatingScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function ChatStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen name="ChatListMain" component={ChatListScreen} />
-      <Stack.Screen
-        name="ChatDetail"
-        component={ChatScreen}
-        options={{
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-            };
-          },
-        }}
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
+      <Stack.Screen name="ChatDetail" component={ChatScreen} />
     </Stack.Navigator>
   );
 }
 
-// Profile Stack
 function ProfileStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
-      <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-            };
-          },
-        }}
-      />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Photos" component={PhotosScreen} />
+      <Stack.Screen name="Preferences" component={PreferencesScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="SafetyCenter" component={SafetyCenterScreen} />
     </Stack.Navigator>
   );
 }
@@ -103,23 +72,31 @@ function TabBarButton({ label, icon, onPress, isActive }) {
   return (
     <TouchableOpacity
       onPress={onPress}
+      activeOpacity={0.7}
       style={{
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: SPACING,
+        paddingVertical: 8,
       }}
     >
-      <Ionicons
-        name={icon}
-        size={24}
-        color={isActive ? COLORS.primary : COLORS.textSecondary}
-      />
+      <View style={{
+        padding: 4,
+        borderRadius: 12,
+        backgroundColor: isActive ? 'rgba(255, 46, 151, 0.1)' : 'transparent',
+      }}>
+        <Ionicons
+          name={icon}
+          size={24}
+          color={isActive ? COLORS.neonPink : COLORS.textTertiary}
+        />
+      </View>
       <Text
         style={{
           fontSize: 10,
-          color: isActive ? COLORS.primary : COLORS.textSecondary,
-          marginTop: 4,
+          fontWeight: isActive ? '700' : '500',
+          color: isActive ? COLORS.textWhite : COLORS.textTertiary,
+          marginTop: 2,
         }}
       >
         {label}
@@ -135,16 +112,16 @@ export default function AppNavigator() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: COLORS.bgPrimary,
-          borderTopColor: COLORS.border,
+          backgroundColor: COLORS.bgDark,
+          borderTopColor: 'rgba(255,255,255,0.05)',
           borderTopWidth: 1,
-          paddingBottom: SPACING,
-          height: 60,
-          elevation: 8,
+          height: Platform.OS === 'ios' ? 88 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          elevation: 20,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: -10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
         },
         tabBarButton: (props) => {
           const { onPress, accessibilityState } = props;
@@ -156,8 +133,11 @@ export default function AppNavigator() {
           if (route.name === 'HomeTab') {
             label = 'Discover';
             icon = isFocused ? 'flame' : 'flame-outline';
+          } else if (route.name === 'ZenzTab') {
+            label = 'Zenz';
+            icon = isFocused ? 'sparkles' : 'sparkles-outline';
           } else if (route.name === 'ChatTab') {
-            label = 'Messages';
+            label = 'Chat';
             icon = isFocused ? 'chatbubbles' : 'chatbubbles-outline';
           } else if (route.name === 'ProfileTab') {
             label = 'Profile';
@@ -175,27 +155,10 @@ export default function AppNavigator() {
         },
       })}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeStack}
-        options={{
-          tabBarLabel: 'Discover',
-        }}
-      />
-      <Tab.Screen
-        name="ChatTab"
-        component={ChatStack}
-        options={{
-          tabBarLabel: 'Messages',
-        }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStack}
-        options={{
-          tabBarLabel: 'Profile',
-        }}
-      />
+      <Tab.Screen name="HomeTab" component={HomeStack} />
+      <Tab.Screen name="ZenzTab" component={ZenzStack} />
+      <Tab.Screen name="ChatTab" component={ChatStack} />
+      <Tab.Screen name="ProfileTab" component={ProfileStack} />
     </Tab.Navigator>
   );
 }

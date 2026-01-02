@@ -7,13 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "datingapp",
-
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FF6B6B"
     },
-
     "ios": {
       "supportsTablet": false,
       "buildNumber": "1",
@@ -25,7 +23,6 @@
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location for matching."
       }
     },
-
     "android": {
       "versionCode": 1,
       "adaptiveIcon": {
@@ -44,11 +41,9 @@
         "ACCESS_NETWORK_STATE"
       ]
     },
-
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "plugins": [
       [
         "expo-image-picker",
@@ -62,9 +57,9 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
-
     "extra": {
       "eas": {
         "projectId": "your-project-id"

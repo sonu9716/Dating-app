@@ -26,7 +26,7 @@ export default function SplashScreen() {
           backgroundColor: COLORS.bgPrimary,
           justifyContent: 'center',
           alignItems: 'center',
-          marginBottom: SPACING,
+          marginBottom: SPACING[4],
         }}
       >
         <Text style={{ fontSize: 48 }}>❤️</Text>
@@ -37,7 +37,7 @@ export default function SplashScreen() {
           fontSize: 28,
           fontWeight: '700',
           color: COLORS.bgPrimary,
-          marginBottom: SPACING,
+          marginBottom: SPACING[4],
         }}
       >
         Dating App
@@ -46,7 +46,7 @@ export default function SplashScreen() {
       <ActivityIndicator
         size="large"
         color={COLORS.bgPrimary}
-        style={{ marginTop: SPACING }}
+        style={{ marginTop: SPACING[4] }}
       />
     </View>
   );

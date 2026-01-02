@@ -1,99 +1,97 @@
-/**
- * Action Buttons Component
- * Like, Pass, and Super Like buttons
- */
-
 import React from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence
+} from 'react-native-reanimated';
 import { COLORS, SPACING, RADIUS } from '../utils/theme';
 
-export default function ActionButtons({
-  onPass,
-  onLike,
-  onSuperLike,
-  isLoading = false,
-}) {
-  const Button = ({ icon, label, color, onPress, isIcon = false }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={isLoading}
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginHorizontal: SPACING,
-      }}
-    >
-      <View
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: RADIUS.full,
-          backgroundColor: color,
-          justifyContent: 'center',
-          alignItems: 'center',
-          opacity: isLoading ? 0.5 : 1,
-        }}
-      >
-        {isIcon ? (
-          icon
-        ) : (
-          <Ionicons name={icon} size={28} color={COLORS.bgPrimary} />
-        )}
-      </View>
-      <Text
-        style={{
-          marginTop: SPACING,
-          fontSize: 12,
-          color: COLORS.textSecondary,
-          fontWeight: '500',
-        }}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+const { width } = Dimensions.get('window');
+
+const AnimatedButton = ({ icon, color, onPress, size = 60, iconSize = 28 }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withSpring(0.9, { damping: 10, stiffness: 200 }),
+      withSpring(1, { damping: 10, stiffness: 200 })
+    );
+    if (onPress) onPress();
+  };
 
   return (
-    <View
-      style={{
-        paddingVertical: SPACING,
-        paddingHorizontal: SPACING,
-        backgroundColor: COLORS.bgPrimary,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-      }}
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={handlePress}
     >
+      <Animated.View style={[
+        styles.button,
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
+        animatedStyle
+      ]}>
+        <Ionicons name={icon} size={iconSize} color={COLORS.textWhite} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+export default function ActionButtons({ onPass, onLike, onSuperLike }) {
+  return (
+    <View style={styles.container}>
       {/* Pass Button */}
-      <Button
-        icon="close-outline"
-        label="Pass"
-        color={COLORS.bgSecondary}
+      <AnimatedButton
+        icon="close"
+        color="rgba(255, 255, 255, 0.1)"
         onPress={onPass}
+        size={56}
+        iconSize={30}
       />
 
       {/* Super Like Button */}
-      <Button
-        icon={
-          <MaterialCommunityIcons name="star" size={28} color={COLORS.bgPrimary} />
-        }
-        label="Super Like"
-        color={COLORS.accent}
+      <AnimatedButton
+        icon="star"
+        color={COLORS.modernTeal}
         onPress={onSuperLike}
-        isIcon
+        size={64}
+        iconSize={32}
       />
 
       {/* Like Button */}
-      <Button
+      <AnimatedButton
         icon="heart"
-        label="Like"
-        color={COLORS.primary}
+        color={COLORS.coral}
         onPress={onLike}
+        size={56}
+        iconSize={30}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: SPACING[8],
+    paddingHorizontal: SPACING[6],
+  },
+  button: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+});

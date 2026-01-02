@@ -4,26 +4,23 @@
  */
 
 export const COLORS = {
-  // Primary Colors (Figma - Coral)
+  // Primary Gradient Colors
   primary: '#FF6B6B',
-  primaryHover: '#FF5555',
-  primaryActive: '#E85555',
-  primaryLight: '#FFB3B3',
-  primaryLighter: '#FFE0E0',
+  primaryStart: '#FF6B6B',
+  primaryMid: '#C44569',
+  primaryEnd: '#A8577D',
 
-  // Secondary Colors (Figma - Teal)
-  secondary: '#4ECDC4',
-  secondaryHover: '#3DB5B0',
-  secondaryActive: '#2D9D9A',
-  secondaryLight: '#7FE5DD',
-  secondaryLighter: '#BFEFEA',
+  // Secondary/Accent Gradients
+  secondary: '#8B5CF6',
+  secondaryStart: '#667eea',
+  secondaryEnd: '#764ba2',
 
-  // Accent Colors (Figma - Yellow)
-  accent: '#FFE66D',
-  accentHover: '#FFE050',
-  accentActive: '#FFD830',
-  accentLight: '#FFF1A3',
-  accentLighter: '#FFF9D9',
+  // Neon Accents
+  neonPink: '#FF2E97',
+  electricPurple: '#8B5CF6',
+  modernTeal: '#06B6D4',
+  coral: '#FF6B6B',
+  deepPurple: '#764ba2',
 
   // Status Colors
   success: '#22C55E',
@@ -36,30 +33,40 @@ export const COLORS = {
   infoLight: '#BFDBFE',
 
   // Backgrounds
-  bgPrimary: '#FFFFFF',
-  bgSecondary: '#F5F5F5',
-  bgTertiary: '#E8E8E8',
-  bgDark: '#1F2121',
-  bgDarkSecondary: '#2A2C2C',
+  bgPrimary: '#F8F8F8',
+  bgSecondary: '#FFFFFF',
+  bgTertiary: '#F0F0F0',
+  bgDark: '#1A1A1A',
+  bgDarkSecondary: '#2D1B2E',
+  bgDarkTertiary: '#252525',
 
   // Text Colors
-  textPrimary: '#000000',
+  textPrimary: '#1A1A1A',
   textSecondary: '#6B7280',
   textTertiary: '#9CA3AF',
-  textWhite: '#FFFFFF',
+  textWhite: '#F5F5F5',
   textDisabled: '#D1D5DB',
 
   // Borders & Dividers
-  border: '#E5E7EB',
-  borderDark: '#D1D5DB',
+  border: 'rgba(0, 0, 0, 0.08)',
+  borderDark: 'rgba(255, 255, 255, 0.1)',
   borderLight: '#F3F4F6',
 
-  // Overlay
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.25)',
+  // Glassmorphism
+  glassBgLight: 'rgba(255, 255, 255, 0.7)',
+  glassBgDark: 'rgba(30, 30, 30, 0.7)',
+  glassBorderLight: 'rgba(255, 255, 255, 0.3)',
+  glassBorderDark: 'rgba(255, 255, 255, 0.1)',
 
   // Special
   transparent: 'transparent',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+};
+
+export const GRADIENTS = {
+  primary: [COLORS.primaryStart, COLORS.primaryMid, COLORS.primaryEnd],
+  secondary: [COLORS.secondaryStart, COLORS.secondaryEnd],
+  dark: [COLORS.bgDark, COLORS.bgDarkSecondary],
 };
 
 export const SPACING = {
@@ -152,5 +159,3 @@ export const ANIMATIONS = {
   slow: 500,
   verySlow: 1000,
 };
-
-export default theme;

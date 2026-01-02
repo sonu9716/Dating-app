@@ -13,7 +13,7 @@ export default function ChatBubble({ message, isOwn }) {
       style={{
         flexDirection: 'row',
         justifyContent: isOwn ? 'flex-end' : 'flex-start',
-        marginVertical: SPACING,
+        marginVertical: SPACING[4],
       }}
     >
       <View
@@ -21,8 +21,8 @@ export default function ChatBubble({ message, isOwn }) {
           maxWidth: '80%',
           backgroundColor: isOwn ? COLORS.primary : COLORS.bgSecondary,
           borderRadius: RADIUS.md,
-          paddingHorizontal: SPACING,
-          paddingVertical: SPACING,
+          paddingHorizontal: SPACING[4],
+          paddingVertical: SPACING[4],
         }}
       >
         <Text
@@ -39,7 +39,7 @@ export default function ChatBubble({ message, isOwn }) {
           style={{
             color: isOwn ? COLORS.primaryLight : COLORS.textTertiary,
             fontSize: 11,
-            marginTop: SPACING,
+            marginTop: SPACING[4],
             alignSelf: 'flex-end',
           }}
         >

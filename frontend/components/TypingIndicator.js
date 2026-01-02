@@ -90,8 +90,8 @@ export default function TypingIndicator() {
         flexDirection: 'row',
         backgroundColor: COLORS.bgSecondary,
         borderRadius: RADIUS.md,
-        paddingHorizontal: SPACING,
-        paddingVertical: SPACING,
+        paddingHorizontal: SPACING[4],
+        paddingVertical: SPACING[4],
         alignItems: 'center',
         width: 50,
       }}

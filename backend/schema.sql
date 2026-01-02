@@ -25,12 +25,12 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Indexes for users
-CREATE INDEX idx_users_age_gender ON users(age, gender) WHERE verified = true;
-CREATE INDEX idx_users_location ON users USING GIST(location) WHERE verified = true;
-CREATE INDEX idx_users_looking_for ON users(looking_for);
-CREATE INDEX idx_users_last_active ON users(last_active DESC);
-CREATE INDEX idx_users_verified ON users(verified);
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_age_gender ON users(age, gender) WHERE verified = true;
+CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST(location) WHERE verified = true;
+CREATE INDEX IF NOT EXISTS idx_users_looking_for ON users(looking_for);
+CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active DESC);
+CREATE INDEX IF NOT EXISTS idx_users_verified ON users(verified);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Matches table
 CREATE TABLE IF NOT EXISTS matches (
@@ -38,13 +38,17 @@ CREATE TABLE IF NOT EXISTS matches (
   user_id_1 INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   user_id_2 INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status VARCHAR(20) DEFAULT 'pending',
-  matched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT unique_match UNIQUE (LEAST(user_id_1, user_id_2), GREATEST(user_id_1, user_id_2))
+  matched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_matches_user_1 ON matches(user_id_1);
-CREATE INDEX idx_matches_user_2 ON matches(user_id_2);
-CREATE INDEX idx_matches_status ON matches(status);
+CREATE UNIQUE INDEX idx_matches_unique ON matches (
+  (LEAST(user_id_1, user_id_2)), 
+  (GREATEST(user_id_1, user_id_2))
+);
+
+CREATE INDEX IF NOT EXISTS idx_matches_user_1 ON matches(user_id_1);
+CREATE INDEX IF NOT EXISTS idx_matches_user_2 ON matches(user_id_2);
+CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);
 
 -- Messages table
 CREATE TABLE IF NOT EXISTS messages (
@@ -59,9 +63,9 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_messages_match ON messages(match_id);
-CREATE INDEX idx_messages_created ON messages(created_at DESC);
-CREATE INDEX idx_messages_read ON messages(read, match_id);
+CREATE INDEX IF NOT EXISTS idx_messages_match ON messages(match_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_read ON messages(read, match_id);
 
 -- User preferences
 CREATE TABLE IF NOT EXISTS user_preferences (
@@ -83,6 +87,41 @@ CREATE TABLE IF NOT EXISTS swipes (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_swipes_user ON swipes(user_id, created_at DESC);
-CREATE INDEX idx_swipes_action ON swipes(action);
+CREATE INDEX IF NOT EXISTS idx_swipes_user ON swipes(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_swipes_action ON swipes(action);
 CREATE UNIQUE INDEX idx_swipes_unique ON swipes(user_id, target_user_id);
+
+-- Emergency Contacts table
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  relationship VARCHAR(50),
+  avatar TEXT,
+  is_verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Date Sessions table
+CREATE TABLE IF NOT EXISTS date_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  match_id INT NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  end_time TIMESTAMP,
+  duration_minutes INT DEFAULT 60,
+  check_in_frequency_minutes INT DEFAULT 30,
+  is_active BOOLEAN DEFAULT true,
+  emergency_activated BOOLEAN DEFAULT false,
+  location_lat DOUBLE PRECISION,
+  location_lng DOUBLE PRECISION,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add safety preferences to user_preferences
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS allow_location_sharing BOOLEAN DEFAULT true;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS receive_check_in_reminders BOOLEAN DEFAULT true;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS notify_via_sms BOOLEAN DEFAULT true;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS notify_via_push BOOLEAN DEFAULT true;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS check_in_frequency_minutes INT DEFAULT 30;

@@ -6,7 +6,8 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.2:5001';
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://192.168.1.2:5001';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -99,16 +100,13 @@ export const authAPI = {
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
-  uploadPhoto: (photo) => {
-    const formData = new FormData();
-    formData.append('photo', photo);
-    return api.post('/users/photo', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  deletePhoto: (photoId) => api.delete(`/users/photo/${photoId}`),
+  uploadPhoto: (formData) => api.post('/users/photo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  deletePhoto: (photoUrl) => api.delete('/users/photo', { data: { photoUrl } }),
   getPreferences: () => api.get('/users/preferences'),
   updatePreferences: (data) => api.put('/users/preferences', data),
+  getDiscovery: (mode) => api.get('/users/discovery', { params: { mode } }),
 };
 
 export const swipeAPI = {

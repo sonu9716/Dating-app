@@ -1,9 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-exports.generateToken = (userId, expiresIn = process.env.JWT_EXPIRY) => {
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-12345';
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
+const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '30d';
+
+exports.JWT_SECRET = JWT_SECRET;
+
+exports.generateToken = (userId, expiresIn = JWT_EXPIRY) => {
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn }
   );
 };
@@ -11,14 +17,14 @@ exports.generateToken = (userId, expiresIn = process.env.JWT_EXPIRY) => {
 exports.generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId, type: 'refresh' },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRY }
+    JWT_SECRET,
+    { expiresIn: JWT_REFRESH_EXPIRY }
   );
 };
 
 exports.verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET);
   } catch (err) {
     throw new Error('Invalid token: ' + err.message);
   }

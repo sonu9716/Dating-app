@@ -16,8 +16,8 @@ export default function Header({ title, showBack = false, onBackPress }) {
     <View
       style={{
         backgroundColor: COLORS.bgPrimary,
-        paddingHorizontal: SPACING,
-        paddingVertical: SPACING,
+        paddingHorizontal: SPACING[4],
+        paddingVertical: SPACING[4],
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
         flexDirection: 'row',
@@ -28,7 +28,7 @@ export default function Header({ title, showBack = false, onBackPress }) {
       {showBack ? (
         <TouchableOpacity
           onPress={onBackPress || (() => navigation.goBack())}
-          style={{ padding: SPACING }}
+          style={{ padding: SPACING[4] }}
         >
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>

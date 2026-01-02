@@ -35,14 +35,14 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
             transform: [{ scale: scaleAnim }],
             backgroundColor: COLORS.bgPrimary,
             borderRadius: RADIUS.lg,
-            paddingVertical: SPACING,
-            paddingHorizontal: SPACING,
+            paddingVertical: SPACING[4],
+            paddingHorizontal: SPACING[4],
             alignItems: 'center',
             width: '85%',
           }}
         >
           {/* Celebration Icon */}
-          <Text style={{ fontSize: 64, marginBottom: SPACING }}>
+          <Text style={{ fontSize: 64, marginBottom: SPACING[4] }}>
             ✨
           </Text>
 
@@ -51,7 +51,7 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
               fontSize: 28,
               fontWeight: '700',
               color: COLORS.primary,
-              marginBottom: SPACING,
+              marginBottom: SPACING[4],
               textAlign: 'center',
             }}
           >
@@ -62,7 +62,7 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
             style={{
               fontSize: 16,
               color: COLORS.textSecondary,
-              marginBottom: SPACING,
+              marginBottom: SPACING[4],
               textAlign: 'center',
             }}
           >
@@ -75,9 +75,9 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
               style={{
                 backgroundColor: COLORS.bgSecondary,
                 borderRadius: RADIUS.md,
-                paddingVertical: SPACING,
-                paddingHorizontal: SPACING,
-                marginBottom: SPACING,
+                paddingVertical: SPACING[4],
+                paddingHorizontal: SPACING[4],
+                marginBottom: SPACING[4],
                 width: '100%',
                 alignItems: 'center',
               }}
@@ -95,7 +95,7 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
                 style={{
                   fontSize: 14,
                   color: COLORS.textSecondary,
-                  marginTop: SPACING,
+                  marginTop: SPACING[4],
                 }}
               >
                 {match.age}
@@ -104,13 +104,13 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
           )}
 
           {/* Buttons */}
-          <View style={{ width: '100%', gap: SPACING }}>
+          <View style={{ width: '100%', gap: SPACING[4] }}>
             <TouchableOpacity
               onPress={onClose}
               style={{
                 backgroundColor: COLORS.primary,
                 borderRadius: RADIUS.md,
-                paddingVertical: SPACING,
+                paddingVertical: SPACING[4],
                 alignItems: 'center',
               }}
             >
@@ -130,7 +130,7 @@ export default function MatchAnimation({ visible = false, onClose, match }) {
               style={{
                 backgroundColor: COLORS.bgSecondary,
                 borderRadius: RADIUS.md,
-                paddingVertical: SPACING,
+                paddingVertical: SPACING[4],
                 alignItems: 'center',
                 borderWidth: 1,
                 borderColor: COLORS.border,

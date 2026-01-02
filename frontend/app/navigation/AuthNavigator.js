@@ -5,10 +5,10 @@
 
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { COLORS } from '../utils/theme';
+import { COLORS } from '../../utils/theme';
 
-import LoginScreen from '../screens/LoginScreen';
-import SignupScreen from '../screens/SignupScreen';
+import LoginScreen from '../../screens/LoginScreen';
+import SignupScreen from '../../screens/SignupScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,51 +17,17 @@ export default function AuthNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: COLORS.bgPrimary },
-        animationEnabled: true,
+        contentStyle: { backgroundColor: COLORS.bgPrimary },
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{
-          animationEnabled: true,
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-            };
-          },
-        }}
       />
       <Stack.Screen
         name="Signup"
         component={SignupScreen}
-        options={{
-          animationEnabled: true,
-          cardStyleInterpolator: ({ current, layouts }) => {
-            return {
-              cardStyle: {
-                transform: [
-                  {
-                    translateX: current.progress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [layouts.screen.width, 0],
-                    }),
-                  },
-                ],
-              },
-            };
-          },
-        }}
       />
     </Stack.Navigator>
   );

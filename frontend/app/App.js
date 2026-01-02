@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import * as SecureStore from 'expo-secure-store';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AuthProvider } from '../context/AuthContext';
+import { ChatProvider } from '../context/ChatContext';
+import { SafetyProvider } from '../context/SafetyContext';
 import RootNavigator from './navigation/RootNavigator';
 
 export default function App() {
-  const [isReady, setIsReady] = useState(false);
-  const [userToken, setUserToken] = useState(null);
-
-  useEffect(() => {
-    bootstrapAsync();
-  }, []);
-
-  const bootstrapAsync = async () => {
-    try {
-      const token = await SecureStore.getItemAsync('userToken');
-      setUserToken(token);
-    } catch (err) {
-      console.error('Failed to restore token', err);
-    } finally {
-      setIsReady(true);
-    }
-  };
-
-  if (!isReady) {
-    return null;
-  }
-
   return (
-    <NavigationContainer>
-      <RootNavigator userToken={userToken} />
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <SafetyProvider>
+          <ChatProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </ChatProvider>
+        </SafetyProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

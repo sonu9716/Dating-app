@@ -1,9 +1,4 @@
-/**
- * Chat Screen
- * Individual conversation
- */
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -12,29 +7,69 @@ import {
   Text,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  StatusBar,
+  Image,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, TYPOGRAPHY, RADIUS } from '../utils/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { COLORS, SPACING, TYPOGRAPHY, RADIUS, GRADIENTS } from '../utils/theme';
 import { messageAPI } from '../utils/api';
 import { useChat } from '../context/ChatContext';
-import ChatBubble from '../components/ChatBubble';
+import { useSafety } from '../context/SafetyContext';
+import SafetyBanner from '../components/SafetyBanner';
+import EmergencyConfirmButton from '../components/EmergencyConfirmButton';
+
+const ChatBubble = ({ message, isOwn }) => (
+  <Animated.View
+    entering={FadeInDown.springify()}
+    style={[
+      styles.bubbleContainer,
+      isOwn ? styles.bubbleOwn : styles.bubbleMatch
+    ]}
+  >
+    <LinearGradient
+      colors={isOwn ? GRADIENTS.primary : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.08)']}
+      style={[
+        styles.bubble,
+        isOwn ? styles.bubbleOwnShape : styles.bubbleMatchShape
+      ]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <Text style={[styles.bubbleText, isOwn ? styles.textWhite : styles.textSecondary]}>
+        {message.text}
+      </Text>
+    </LinearGradient>
+    <Text style={styles.bubbleTime}>
+      {message.time || '12:45 PM'}
+    </Text>
+  </Animated.View>
+);
 
 export default function ChatScreen({ route, navigation }) {
   const { match } = route.params;
   const { state, sendMessage, startTyping, stopTyping } = useChat();
+  const { liveSession, startLiveSession, endLiveSession, triggerEmergency } = useSafety();
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [showEmergencyConfirm, setShowEmergencyConfirm] = useState(false);
+  const flatListRef = useRef();
 
   useEffect(() => {
     loadMessages();
-  }, [match.id]);
+  }, [match.matchId]);
 
   const loadMessages = async () => {
     try {
       setIsLoading(true);
-      const response = await messageAPI.getMessages(match.id);
-      // Update chat context with messages
+      await messageAPI.getMessages(match.matchId);
+    } catch (err) {
+      console.error('Load messages error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -45,9 +80,9 @@ export default function ChatScreen({ route, navigation }) {
 
     setIsSending(true);
     try {
-      sendMessage(match.id, message);
+      sendMessage(match.matchId, message);
       setMessage('');
-      stopTyping(match.id);
+      stopTyping(match.matchId);
     } finally {
       setIsSending(false);
     }
@@ -56,128 +91,282 @@ export default function ChatScreen({ route, navigation }) {
   const handleTyping = (text) => {
     setMessage(text);
     if (text.length > 0) {
-      startTyping(match.id);
+      startTyping(match.matchId);
     } else {
-      stopTyping(match.id);
+      stopTyping(match.matchId);
     }
   };
 
-  const messages = state.messages[match.id] || [];
+  const messages = state.messages[match.matchId] || [];
+  const isOnline = state.onlineUsers[match.id];
+  const isTyping = state.typingUsers[match.matchId];
 
   return (
-    <KeyboardAvoidingView
-      behavior="padding"
-      style={{ flex: 1, backgroundColor: COLORS.bgPrimary }}
-    >
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: COLORS.bgPrimary,
-          paddingHorizontal: SPACING,
-          paddingVertical: SPACING,
-          borderBottomWidth: 1,
-          borderBottomColor: COLORS.border,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ padding: SPACING }}
-        >
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: '600',
-            color: COLORS.textPrimary,
-          }}
-        >
-          {match.name}
-        </Text>
-        <TouchableOpacity style={{ padding: SPACING }}>
-          <Ionicons name="more-vert" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={[COLORS.bgDark, COLORS.bgDarkSecondary]}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Messages */}
-      {isLoading ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <ActivityIndicator size="large" color={COLORS.primary} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <BlurView tint="light" intensity={20} style={styles.headerBlur}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
+              <Ionicons name="chevron-back" size={24} color={COLORS.textWhite} />
+            </TouchableOpacity>
+
+            <View style={styles.headerTitleContainer}>
+              <Image
+                source={{ uri: match.avatar || 'https://via.placeholder.com/150' }}
+                style={styles.headerAvatar}
+              />
+              <View>
+                <Text style={styles.headerName}>{match.name}</Text>
+                <Text style={styles.headerStatus}>
+                  {isTyping ? 'typing...' : (isOnline ? 'Online' : 'Offline')}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.headerIcon}
+              onPress={() => {
+                if (liveSession) {
+                  Alert.alert('End Date Session', 'Are you sure you want to end this live date session?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'End Session', style: 'destructive', onPress: endLiveSession }
+                  ]);
+                } else {
+                  Alert.alert('Start Date Session', 'This will activate safety tracking and notify your emergency contacts if needed.', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Start Session', onPress: () => startLiveSession(match, 60) }
+                  ]);
+                }
+              }}
+            >
+              <Ionicons
+                name={liveSession ? "shield-checkmark" : "shield-outline"}
+                size={22}
+                color={liveSession ? COLORS.modernTeal : COLORS.textWhite}
+              />
+            </TouchableOpacity>
+          </BlurView>
         </View>
-      ) : (
-        <FlatList
-          data={messages}
-          renderItem={({ item }) => (
-            <ChatBubble message={item} isOwn={item.isOwn} />
-          )}
-          keyExtractor={(item) => item.id.toString()}
-          inverted
-          contentContainerStyle={{
-            paddingHorizontal: SPACING,
-            paddingVertical: SPACING,
-          }}
-        />
-      )}
 
-      {/* Input */}
-      <View
-        style={{
-          flexDirection: 'row',
-          paddingHorizontal: SPACING,
-          paddingVertical: SPACING,
-          borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          alignItems: 'center',
-        }}
-      >
-        <TextInput
-          style={{
-            flex: 1,
-            backgroundColor: COLORS.bgSecondary,
-            borderRadius: RADIUS.full,
-            paddingHorizontal: SPACING,
-            paddingVertical: SPACING,
-            maxHeight: 100,
-            marginRight: SPACING,
-          }}
-          placeholder="Type a message..."
-          placeholderTextColor={COLORS.textTertiary}
-          value={message}
-          onChangeText={handleTyping}
-          multiline
+        {/* Safety Banner */}
+        <SafetyBanner
+          onGetHelpPress={() => setShowEmergencyConfirm(true)}
+          onReportPress={() => Alert.alert('Report Issue', 'Choose the issue type...', [
+            { text: 'Scam/Spam', onPress: () => { } },
+            { text: 'Harassment', onPress: () => { } },
+            { text: 'Cancel', style: 'cancel' }
+          ])}
         />
-        <TouchableOpacity
-          onPress={handleSendMessage}
-          disabled={!message.trim() || isSending}
-          style={{
-            backgroundColor: COLORS.primary,
-            borderRadius: RADIUS.full,
-            width: 40,
-            height: 40,
-            justifyContent: 'center',
-            alignItems: 'center',
-            opacity: !message.trim() || isSending ? 0.5 : 1,
-          }}
-        >
-          {isSending ? (
-            <ActivityIndicator
-              size="small"
-              color={COLORS.bgPrimary}
+
+        {/* Messages */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.neonPink} />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={({ item }) => (
+              <ChatBubble message={item} isOwn={item.isOwn} />
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            inverted
+            contentContainerStyle={styles.messageList}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* Input Area */}
+        <BlurView tint="dark" intensity={50} style={styles.inputArea}>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type a message..."
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={message}
+              onChangeText={handleTyping}
+              multiline
+              maxHeight={100}
             />
-          ) : (
-            <Ionicons name="send" size={20} color={COLORS.bgPrimary} />
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+            <TouchableOpacity
+              onPress={handleSendMessage}
+              disabled={!message.trim() || isSending}
+              style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+            >
+              <LinearGradient
+                colors={GRADIENTS.primary}
+                style={styles.sendGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                {isSending ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Ionicons name="send" size={18} color="#FFF" />
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+      </KeyboardAvoidingView>
+
+      <EmergencyConfirmButton
+        visible={showEmergencyConfirm}
+        onConfirm={async () => {
+          try {
+            await triggerEmergency();
+            setShowEmergencyConfirm(false);
+            Alert.alert('Emergency Alert Sent', 'Your emergency contacts have been notified and shared your location.');
+          } catch (err) {
+            Alert.alert('Error', 'Failed to send alert.');
+          }
+        }}
+        onCancel={() => setShowEmergencyConfirm(false)}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 44 : 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    height: 70,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING[4],
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: SPACING[2],
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: SPACING[3],
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  headerName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textWhite,
+  },
+  headerStatus: {
+    fontSize: 12,
+    color: COLORS.modernTeal,
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  messageList: {
+    paddingHorizontal: SPACING[4],
+    paddingVertical: SPACING[6],
+  },
+  bubbleContainer: {
+    marginBottom: SPACING[4],
+    maxWidth: '80%',
+  },
+  bubbleOwn: {
+    alignSelf: 'flex-end',
+  },
+  bubbleMatch: {
+    alignSelf: 'flex-start',
+  },
+  bubble: {
+    paddingHorizontal: SPACING[4],
+    paddingVertical: SPACING[3],
+    borderRadius: RADIUS.lg,
+  },
+  bubbleOwnShape: {
+    borderBottomRightRadius: 2,
+  },
+  bubbleMatchShape: {
+    borderBottomLeftRadius: 2,
+  },
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  textWhite: {
+    color: '#FFF',
+  },
+  textSecondary: {
+    color: COLORS.textSecondary,
+  },
+  bubbleTime: {
+    fontSize: 10,
+    color: COLORS.textTertiary,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  inputArea: {
+    paddingBottom: Platform.OS === 'ios' ? 34 : SPACING[4],
+    paddingTop: SPACING[4],
+    paddingHorizontal: SPACING[4],
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: RADIUS.full,
+    paddingLeft: SPACING[4],
+    paddingRight: 4,
+    paddingVertical: 4,
+  },
+  input: {
+    flex: 1,
+    color: COLORS.textWhite,
+    fontSize: 15,
+    paddingVertical: 8,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  sendGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
+});
