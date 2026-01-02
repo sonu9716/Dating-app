@@ -3,7 +3,14 @@ const bcrypt = require('bcryptjs');
 const { generateToken, generateRefreshToken, verifyToken } = require('../utils/jwt');
 
 exports.signup = async (req, res) => {
-    const { email, password, firstName, lastName, username } = req.body;
+    let { email, password, firstName, lastName, username, name } = req.body;
+
+    // Handle single "name" field from frontend (e.g. from SignupScreen.js)
+    if (!firstName && !lastName && name) {
+        const nameParts = name.trim().split(' ');
+        firstName = nameParts[0];
+        lastName = nameParts.slice(1).join(' ') || '';
+    }
 
     try {
         // Check if user exists
