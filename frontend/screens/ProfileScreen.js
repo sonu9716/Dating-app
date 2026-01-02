@@ -100,7 +100,7 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.name}>{user.name}, {user.age}</Text>
+          <Text style={styles.name}>{user.firstName} {user.lastName}, {user.age}</Text>
           <View style={styles.locationRow}>
             <Ionicons name="location-sharp" size={14} color={COLORS.modernTeal} />
             <Text style={styles.locationText}>{user.location || 'Location not set'}</Text>

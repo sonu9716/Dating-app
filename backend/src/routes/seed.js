@@ -53,9 +53,9 @@ router.get('/genz', async (req, res) => {
                 const email = `${firstName.toLowerCase()}.${category}.${i}@example.com`;
                 const username = `${firstName.toLowerCase()}_${category}_${i}`;
 
-                // Random location near NYC
-                const lat = 40.7128 + (Math.random() - 0.5) * 0.1;
-                const lng = -74.0060 + (Math.random() - 0.5) * 0.1;
+                // Random location near New Delhi, India
+                const lat = 28.6139 + (Math.random() - 0.5) * 0.5;
+                const lng = 77.2090 + (Math.random() - 0.5) * 0.5;
 
                 await pool.query(`
                     INSERT INTO users (
