@@ -37,8 +37,15 @@ exports.getProfile = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-    const userId = req.user.id; // Corrected to use req.user.id from auth middleware
-    const { firstName, lastName, bio, gender, age, location, photos } = req.body;
+    const userId = req.user.id;
+    let { firstName, lastName, bio, gender, age, location, photos, interests, name } = req.body;
+
+    // Handle single "name" field from frontend
+    if (!firstName && !lastName && name) {
+        const nameParts = name.trim().split(' ');
+        firstName = nameParts[0];
+        lastName = nameParts.slice(1).join(' ') || '';
+    }
 
     try {
         const result = await pool.query(
@@ -50,10 +57,11 @@ exports.updateProfile = async (req, res) => {
                  age = COALESCE($5, age),
                  location = COALESCE($6, location),
                  photos = COALESCE($7, photos),
+                 interests = COALESCE($8, interests),
                  updated_at = CURRENT_TIMESTAMP
-             WHERE id = $8
+             WHERE id = $9
              RETURNING *`,
-            [firstName, lastName, bio, gender, age, location, photos, userId]
+            [firstName, lastName, bio, gender, age, location, photos, interests, userId]
         );
 
         if (result.rows.length === 0) {
@@ -74,7 +82,8 @@ exports.updateProfile = async (req, res) => {
                 age: updatedUser.age,
                 location: updatedUser.location,
                 avatar: updatedUser.photos && updatedUser.photos.length > 0 ? updatedUser.photos[0] : 'https://via.placeholder.com/150',
-                photos: updatedUser.photos || []
+                photos: updatedUser.photos || [],
+                interests: updatedUser.interests || []
             }
         });
     } catch (err) {
