@@ -20,32 +20,44 @@ pool.on('connect', () => {
 });
 
 // Redis Connection
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
-  socket: {
-    reconnectStrategy: (retries) => Math.min(retries * 50, 500)
-  }
-});
+let redisClient = {
+  connect: async () => console.log('⚠️ Redis disabled: No REDIS_URL provided'),
+  on: () => { },
+  get: async () => null,
+  set: async () => null,
+  del: async () => null,
+  quit: async () => null,
+  isOpen: false
+};
 
-redisClient.on('error', (err) => {
-  console.error('❌ Redis error:', err.message);
-});
+if (process.env.REDIS_URL) {
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      reconnectStrategy: (retries) => Math.min(retries * 50, 500)
+    }
+  });
 
-redisClient.on('connect', () => {
-  console.log('✅ Redis connected');
-});
+  redisClient.on('error', (err) => {
+    console.error('❌ Redis error:', err.message);
+  });
 
-redisClient.on('ready', () => {
-  console.log('✅ Redis ready');
-});
+  redisClient.on('connect', () => {
+    console.log('✅ Redis connected');
+  });
 
-// Connect Redis
-(async () => {
-  try {
-    await redisClient.connect();
-  } catch (err) {
-    console.error('Failed to connect to Redis:', err);
-  }
-})();
+  redisClient.on('ready', () => {
+    console.log('✅ Redis ready');
+  });
+
+  // Connect Redis
+  (async () => {
+    try {
+      await redisClient.connect();
+    } catch (err) {
+      console.error('Failed to connect to Redis:', err);
+    }
+  })();
+}
 
 module.exports = { pool, redisClient };
