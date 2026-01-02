@@ -11,7 +11,11 @@
             "android": {
                 "buildType": "apk"
             },
-            "distribution": "internal"
+            "distribution": "internal",
+            "env": {
+                "EXPO_PUBLIC_API_URL": "https://dating-app-8da6.onrender.com",
+                "EXPO_PUBLIC_SOCKET_URL": "https://dating-app-8da6.onrender.com"
+            }
         },
         "production": {
             "android": {
