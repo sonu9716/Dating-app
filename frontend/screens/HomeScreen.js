@@ -50,33 +50,22 @@ export default function HomeScreen({ route, navigation }) {
       setIsLoading(true);
       // Pass mode to API if supported, otherwise just fetch regular discovery
       const response = await userAPI.getDiscovery(mode);
-      if (response && response.data && response.data.profiles) {
-        setProfiles(response.data.profiles);
+      console.log('Discovery response:', response.data); // Debug log
+
+      // Backend returns { success: true, data: { profiles: [...] } }
+      // Axios wraps in response.data, so full path is response.data.data.profiles
+      if (response && response.data && response.data.data && response.data.data.profiles) {
+        setProfiles(response.data.data.profiles);
+        console.log(`Loaded ${response.data.data.profiles.length} profiles`);
       } else {
+        console.warn('No profiles in response:', response.data);
         setProfiles([]);
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
-      setProfiles([
-        {
-          id: 1,
-          name: 'Sarah',
-          age: 26,
-          photos: ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800'],
-          bio: 'Passionate about art and architecture. Love to travel and explore new cultures.',
-          interests: ['Art', 'Travel', 'Music'],
-          distance: 5,
-        },
-        {
-          id: 2,
-          name: 'Emma',
-          age: 24,
-          photos: ['https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800'],
-          bio: 'Fitness enthusiast and yoga lover. Looking for someone to share healthy vibes with.',
-          interests: ['Yoga', 'Fitness', 'Cooking'],
-          distance: 12,
-        },
-      ]);
+      console.error('Error response:', error.response?.data);
+      // Don't set fallback data - let user see empty state to know something is wrong
+      setProfiles([]);
     } finally {
       setIsLoading(false);
     }
