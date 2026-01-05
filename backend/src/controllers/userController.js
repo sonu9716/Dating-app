@@ -61,7 +61,17 @@ exports.updateProfile = async (req, res) => {
                  updated_at = CURRENT_TIMESTAMP
              WHERE id = $9
              RETURNING *`,
-            [firstName, lastName, bio, gender, age, location, photos, interests, userId]
+            [
+                firstName || null,
+                lastName || null,
+                bio || null,
+                gender || null,
+                age || null,
+                location || null,
+                photos || null,
+                interests || null,
+                userId
+            ]
         );
 
         if (result.rows.length === 0) {
@@ -101,7 +111,7 @@ exports.getDiscovery = async (req, res) => {
         // and have not been swiped by the current user yet
         // TODO: Implement specific filtering logic based on 'mode'
         const result = await pool.query(
-            `SELECT id, first_name, last_name, bio, gender, age, location, photos 
+            `SELECT id, first_name, last_name, bio, gender, age, location, photos, interests
              FROM users 
              WHERE id != $1 
              AND id NOT IN (
@@ -113,12 +123,12 @@ exports.getDiscovery = async (req, res) => {
 
         const profiles = result.rows.map(user => ({
             id: user.id,
-            name: user.first_name,
+            name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.first_name || 'Unknown',
             age: user.age,
             photos: user.photos || ['https://via.placeholder.com/400x600'],
             bio: user.bio || 'No bio provided',
             distance: Math.floor(Math.random() * 20) + 1, // Mock distance for now
-            interests: ['Art', 'Music', 'Travel'], // Mock interests
+            interests: user.interests || ['Art', 'Music', 'Travel'],
             isVerified: true
         }));
 
