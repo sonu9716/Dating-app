@@ -84,4 +84,31 @@ router.get('/genz', async (req, res) => {
     }
 });
 
+router.get('/swipes/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const result = await pool.query('SELECT COUNT(*) as count FROM swipes WHERE user_id = $1', [userId]);
+        res.json({
+            success: true,
+            userId: parseInt(userId),
+            swipeCount: parseInt(result.rows[0].count)
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/swipes/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const result = await pool.query('DELETE FROM swipes WHERE user_id = $1', [userId]);
+        res.json({
+            success: true,
+            message: `Deleted ${result.rowCount} swipes for user ${userId}`
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
