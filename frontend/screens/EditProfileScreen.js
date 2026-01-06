@@ -19,8 +19,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, SPACING, RADIUS, TYPOGRAPHY, GRADIENTS } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
 
-const FormInput = ({ label, value, onChangeText, placeholder, multiline, keyboardType, delay = 0 }) => (
-    <Animated.View entering={FadeInDown.delay(delay)} style={styles.inputContainer}>
+const FormInput = React.memo(({ label, value, onChangeText, placeholder, multiline, keyboardType }) => (
+    <View style={styles.inputContainer}>
         <Text style={styles.label}>{label}</Text>
         <View style={styles.inputWrapper}>
             <TextInput
@@ -35,12 +35,12 @@ const FormInput = ({ label, value, onChangeText, placeholder, multiline, keyboar
                 autoCapitalize="sentences"
             />
         </View>
-    </Animated.View>
-);
+    </View>
+));
 
 export default function EditProfileScreen({ navigation }) {
-    const { state, updateProfile } = useAuth();
-    const user = state.user;
+    const { state: authState, updateProfile } = useAuth();
+    const user = authState.user;
 
     const [formData, setFormData] = useState({
         firstName: user?.firstName || '',
@@ -59,11 +59,10 @@ export default function EditProfileScreen({ navigation }) {
 
         setIsLoading(true);
         try {
-            // Include 'name' for backend compatibility and all other fields
             const result = await updateProfile({
                 ...formData,
                 name: `${formData.firstName} ${formData.lastName}`.trim(),
-                age: parseInt(formData.age, 10)
+                age: formData.age ? parseInt(formData.age, 10) : null
             });
             if (result.success) {
                 Alert.alert('Success', 'Profile updated correctly');
@@ -107,74 +106,72 @@ export default function EditProfileScreen({ navigation }) {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <FormInput
-                        label="First Name"
-                        value={formData.firstName}
-                        onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-                        placeholder="Your first name"
-                        delay={100}
-                    />
+                    <Animated.View entering={FadeInDown.duration(400)}>
+                        <FormInput
+                            label="First Name"
+                            value={formData.firstName}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, firstName: text }))}
+                            placeholder="Your first name"
+                        />
 
-                    <FormInput
-                        label="Last Name"
-                        value={formData.lastName}
-                        onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-                        placeholder="Your last name"
-                        delay={150}
-                    />
+                        <FormInput
+                            label="Last Name"
+                            value={formData.lastName}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, lastName: text }))}
+                            placeholder="Your last name"
+                        />
 
-                    <FormInput
-                        label="Age"
-                        value={formData.age}
-                        onChangeText={(text) => setFormData({ ...formData, age: text.replace(/[^0-9]/g, '') })}
-                        placeholder="Your age"
-                        keyboardType="numeric"
-                        delay={200}
-                    />
+                        <FormInput
+                            label="Age"
+                            value={formData.age}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, age: text.replace(/[^0-9]/g, '') }))}
+                            placeholder="Your age"
+                            keyboardType="numeric"
+                        />
 
-                    <FormInput
-                        label="Location"
-                        value={formData.location}
-                        onChangeText={(text) => setFormData({ ...formData, location: text })}
-                        placeholder="e.g. New York, NY"
-                        delay={250}
-                    />
+                        <FormInput
+                            label="Location"
+                            value={formData.location}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
+                            placeholder="e.g. New York, NY"
+                        />
 
-                    <FormInput
-                        label="Bio"
-                        value={formData.bio}
-                        onChangeText={(text) => setFormData({ ...formData, bio: text })}
-                        placeholder="Tell us about yourself..."
-                        multiline
-                        delay={300}
-                    />
+                        <FormInput
+                            label="Bio"
+                            value={formData.bio}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, bio: text }))}
+                            placeholder="Tell us about yourself..."
+                            multiline
+                        />
 
-                    <TouchableOpacity
-                        onPress={handleSave}
-                        disabled={isLoading}
-                        style={styles.saveButton}
-                    >
-                        {isLoading ? (
-                            <View style={[styles.gradientButton, { backgroundColor: COLORS.bgDarkSecondary }]}>
-                                <ActivityIndicator color="#FFF" />
-                            </View>
-                        ) : (
-                            <LinearGradient
-                                colors={GRADIENTS.primary}
-                                style={styles.gradientButton}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Text style={styles.saveButtonText}>Apply Changes</Text>
-                            </LinearGradient>
-                        )}
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleSave}
+                            disabled={isLoading}
+                            style={styles.saveButton}
+                        >
+                            {isLoading ? (
+                                <View style={[styles.gradientButton, { backgroundColor: COLORS.bgDarkSecondary }]}>
+                                    <ActivityIndicator color="#FFF" />
+                                </View>
+                            ) : (
+                                <LinearGradient
+                                    colors={GRADIENTS.primary}
+                                    style={styles.gradientButton}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                >
+                                    <Text style={styles.saveButtonText}>Apply Changes</Text>
+                                </LinearGradient>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
