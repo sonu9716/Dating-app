@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Indexes for users
 CREATE INDEX IF NOT EXISTS idx_users_age_gender ON users(age, gender) WHERE verified = true;
-CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST(location) WHERE verified = true;
+CREATE INDEX IF NOT EXISTS idx_users_location ON users(location) WHERE verified = true;
 CREATE INDEX IF NOT EXISTS idx_users_looking_for ON users(looking_for);
 CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active DESC);
 CREATE INDEX IF NOT EXISTS idx_users_verified ON users(verified);
@@ -127,5 +127,8 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS notify_via_push BOOLEAN DE
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS check_in_frequency_minutes INT DEFAULT 30;
 
 -- Migration: Change location from POINT to VARCHAR
--- Simple one-liner compatible with the current semicolon splitter
+-- We MUST drop the GIST index first because it doesn't support VARCHAR
+DROP INDEX IF EXISTS idx_users_location;
 ALTER TABLE users ALTER COLUMN location TYPE VARCHAR(255);
+-- Re-create the index as a standard B-Tree index for strings
+CREATE INDEX IF NOT EXISTS idx_users_location ON users(location);

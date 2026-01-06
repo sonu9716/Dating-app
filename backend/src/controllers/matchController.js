@@ -7,7 +7,7 @@ exports.getMatches = async (req, res) => {
         const result = await pool.query(
             `SELECT m.id as match_id, m.matched_at,
               u.id, u.first_name, u.last_name, u.photos, u.username,
-              (SELECT text FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message,
+              (SELECT encrypted_content FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message_time
        FROM matches m
        JOIN users u ON (m.user_id_1 = u.id OR m.user_id_2 = u.id)
