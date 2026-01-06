@@ -89,12 +89,15 @@ async function runMigration() {
     const statements = schema.split(';').filter(s => s.trim().length > 0);
 
     for (const statement of statements) {
+      const trimmed = statement.trim();
+      if (!trimmed) continue;
+
       try {
-        await pool.query(statement);
+        await pool.query(trimmed);
       } catch (err) {
-        // Ignore "relation already exists" or simple errors if table exists
-        if (err.code !== '42P07') { // 42P07 is duplicate_table in Postgres
-          console.warn(`⚠️ Migration warning: ${err.message}`);
+        // Ignore "relation already exists" (42P07) or "column already exists" (42701)
+        if (err.code !== '42P07' && err.code !== '42701') {
+          console.warn(`⚠️ Migration warning on [${trimmed.substring(0, 50)}...]: ${err.message}`);
         }
       }
     }

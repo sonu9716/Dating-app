@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   bio TEXT,
   age INT CHECK (age >= 18 AND age <= 100),
   gender VARCHAR(20),
-  location POINT,
+  location VARCHAR(255),
   photos TEXT[] DEFAULT '{}',
   looking_for VARCHAR(100),
   interests TEXT[] DEFAULT '{}',
@@ -125,3 +125,7 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS receive_check_in_reminders
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS notify_via_sms BOOLEAN DEFAULT true;
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS notify_via_push BOOLEAN DEFAULT true;
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS check_in_frequency_minutes INT DEFAULT 30;
+
+-- Migration: Change location from POINT to VARCHAR
+-- Simple one-liner compatible with the current semicolon splitter
+ALTER TABLE users ALTER COLUMN location TYPE VARCHAR(255);

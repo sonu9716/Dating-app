@@ -105,7 +105,7 @@ export function AuthProvider({ children }) {
     bootstrapAsync();
   }, []);
 
-  const authContext = {
+  const authContext = React.useMemo(() => ({
     state,
     dispatch,
     login: async (email, password) => {
@@ -185,7 +185,7 @@ export function AuthProvider({ children }) {
     clearError: () => {
       dispatch({ type: 'CLEAR_ERROR' });
     },
-  };
+  }), [state]);
 
   return (
     <AuthContext.Provider value={authContext}>

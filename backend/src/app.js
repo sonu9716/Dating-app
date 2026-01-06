@@ -7,6 +7,9 @@ require('dotenv').config();
 
 const app = express();
 
+// Trust proxy for rate limiting behind Render/load balancers
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet());
 app.use(compression());
