@@ -5,6 +5,9 @@ const { generateToken, generateRefreshToken, verifyToken } = require('../utils/j
 exports.signup = async (req, res) => {
     let { email, password, firstName, lastName, username, name, age, gender, bio, interests, location } = req.body;
 
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+    const processedEmail = email.toLowerCase().trim();
+
     // Handle single "name" field from frontend (e.g. from SignupScreen.js)
     if (!firstName && !lastName && name) {
         const nameParts = name.trim().split(' ');
@@ -14,9 +17,9 @@ exports.signup = async (req, res) => {
 
     try {
         // Check if user exists
-        const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [processedEmail]);
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ error: 'User already exists' });
+            return res.status(400).json({ success: false, message: 'User already exists' });
         }
 
         // Hash password
@@ -24,16 +27,15 @@ exports.signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create user
-        // Note: username is required in schema, so we either use email prefix or a provided username
-        const finalUsername = username || email.split('@')[0] + Math.floor(Math.random() * 1000);
+        const finalUsername = username || processedEmail.split('@')[0] + Math.floor(Math.random() * 1000);
 
         const newUser = await pool.query(
             `INSERT INTO users(
-    email, password_hash, first_name, last_name, username,
-    age, gender, bio, interests, location
-) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING * `,
-            [email, hashedPassword, firstName, lastName, finalUsername, age, gender, bio, interests || [], location]
+                email, password_hash, first_name, last_name, username,
+                age, gender, bio, interests, location
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *`,
+            [processedEmail, hashedPassword, firstName, lastName, finalUsername, age, gender, bio, interests || [], location]
         );
 
         const user = newUser.rows[0];
@@ -47,7 +49,7 @@ RETURNING * `,
             user: {
                 id: user.id,
                 email: user.email,
-                name: `${user.first_name} ${user.last_name} `,
+                name: `${user.first_name} ${user.last_name}`.trim(),
                 firstName: user.first_name,
                 lastName: user.last_name,
                 username: user.username,
@@ -61,27 +63,38 @@ RETURNING * `,
         });
     } catch (err) {
         console.error('Signup error:', err.message);
-        res.status(500).json({ error: 'Server error during signup' });
+        res.status(500).json({ success: false, message: 'Server error during signup', error: err.message });
     }
 };
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const processedEmail = email.toLowerCase().trim();
+    console.log(`🔐 Login attempt for: ${processedEmail}`);
+
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [processedEmail]);
         if (result.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            console.log(`❌ Login failed: ${processedEmail} not found`);
+            return res.status(400).json({ success: false, message: 'Invalid credentials. User not found.' });
         }
 
         const user = result.rows[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            console.log(`❌ Login failed: Incorrect password for ${processedEmail}`);
+            return res.status(400).json({ success: false, message: 'Invalid credentials. Incorrect password.' });
         }
 
         const token = generateToken(user.id);
         const refreshToken = generateRefreshToken(user.id);
+
+        console.log(`✅ Login successful: ${processedEmail} (ID: ${user.id})`);
 
         res.json({
             success: true,
@@ -90,7 +103,7 @@ exports.login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                name: `${user.first_name} ${user.last_name} `,
+                name: `${user.first_name} ${user.last_name}`.trim(),
                 firstName: user.first_name,
                 lastName: user.last_name,
                 username: user.username,
@@ -104,7 +117,7 @@ exports.login = async (req, res) => {
         });
     } catch (err) {
         console.error('Login error:', err.message);
-        res.status(500).json({ error: 'Server error during login' });
+        res.status(500).json({ success: false, message: 'Server error during login', error: err.message });
     }
 };
 

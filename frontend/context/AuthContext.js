@@ -110,7 +110,7 @@ export function AuthProvider({ children }) {
     dispatch,
     login: async (email, password) => {
       try {
-        const response = await authAPI.login(email, password);
+        const response = await authAPI.login(email.toLowerCase().trim(), password);
         const { user, token, refreshToken } = response.data;
 
         await secureStorage.setToken(token);
@@ -129,6 +129,7 @@ export function AuthProvider({ children }) {
 
     signup: async (userData) => {
       try {
+        if (userData.email) userData.email = userData.email.toLowerCase().trim();
         const response = await authAPI.signup(userData);
         const { user, token, refreshToken } = response.data;
 

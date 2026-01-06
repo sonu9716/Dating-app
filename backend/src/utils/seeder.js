@@ -74,6 +74,7 @@ async function seedGenZUsers() {
                     ) ON CONFLICT (username) DO UPDATE SET
                         first_name = EXCLUDED.first_name,
                         last_name = EXCLUDED.last_name,
+                        password_hash = EXCLUDED.password_hash,
                         age = EXCLUDED.age,
                         gender = EXCLUDED.gender,
                         bio = EXCLUDED.bio,
