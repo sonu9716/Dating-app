@@ -59,6 +59,7 @@ app.use('/api/messages', require('./routes/messages'));
 app.use('/api/swipes', require('./routes/swipes'));
 app.use('/api/safety', require('./routes/safety'));
 app.use('/api/seed', require('./routes/seed'));
+app.use('/api/debug', require('./routes/debug'));
 
 // 404 Handler
 app.use((req, res) => {
