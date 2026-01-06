@@ -19,6 +19,25 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, SPACING, RADIUS, TYPOGRAPHY, GRADIENTS } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
 
+const FormInput = ({ label, value, onChangeText, placeholder, multiline, keyboardType, delay = 0 }) => (
+    <Animated.View entering={FadeInDown.delay(delay)} style={styles.inputContainer}>
+        <Text style={styles.label}>{label}</Text>
+        <View style={styles.inputWrapper}>
+            <TextInput
+                style={[styles.input, multiline && styles.textArea]}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                multiline={multiline}
+                keyboardType={keyboardType}
+                textAlignVertical={multiline ? 'top' : 'center'}
+                autoCapitalize="sentences"
+            />
+        </View>
+    </Animated.View>
+);
+
 export default function EditProfileScreen({ navigation }) {
     const { state, updateProfile } = useAuth();
     const user = state.user;
@@ -40,38 +59,25 @@ export default function EditProfileScreen({ navigation }) {
 
         setIsLoading(true);
         try {
+            // Include 'name' for backend compatibility and all other fields
             const result = await updateProfile({
                 ...formData,
+                name: `${formData.firstName} ${formData.lastName}`.trim(),
                 age: parseInt(formData.age, 10)
             });
             if (result.success) {
                 Alert.alert('Success', 'Profile updated correctly');
                 navigation.goBack();
             } else {
-                Alert.alert('Error', result.error);
+                Alert.alert('Error', result.error || 'Update failed');
             }
+        } catch (err) {
+            Alert.alert('Error', 'An unexpected error occurred');
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
     };
-
-    const FormInput = ({ label, value, onChangeText, placeholder, multiline, keyboardType }) => (
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.inputContainer}>
-            <Text style={styles.label}>{label}</Text>
-            <View style={styles.inputWrapper}>
-                <TextInput
-                    style={[styles.input, multiline && styles.textArea]}
-                    value={value}
-                    onChangeText={onChangeText}
-                    placeholder={placeholder}
-                    placeholderTextColor="rgba(255,255,255,0.3)"
-                    multiline={multiline}
-                    keyboardType={keyboardType}
-                    textAlignVertical={multiline ? 'top' : 'center'}
-                />
-            </View>
-        </Animated.View>
-    );
 
     return (
         <View style={styles.container}>
@@ -105,12 +111,14 @@ export default function EditProfileScreen({ navigation }) {
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
                 >
                     <FormInput
                         label="First Name"
                         value={formData.firstName}
                         onChangeText={(text) => setFormData({ ...formData, firstName: text })}
                         placeholder="Your first name"
+                        delay={100}
                     />
 
                     <FormInput
@@ -118,6 +126,7 @@ export default function EditProfileScreen({ navigation }) {
                         value={formData.lastName}
                         onChangeText={(text) => setFormData({ ...formData, lastName: text })}
                         placeholder="Your last name"
+                        delay={150}
                     />
 
                     <FormInput
@@ -126,6 +135,7 @@ export default function EditProfileScreen({ navigation }) {
                         onChangeText={(text) => setFormData({ ...formData, age: text.replace(/[^0-9]/g, '') })}
                         placeholder="Your age"
                         keyboardType="numeric"
+                        delay={200}
                     />
 
                     <FormInput
@@ -133,6 +143,7 @@ export default function EditProfileScreen({ navigation }) {
                         value={formData.location}
                         onChangeText={(text) => setFormData({ ...formData, location: text })}
                         placeholder="e.g. New York, NY"
+                        delay={250}
                     />
 
                     <FormInput
@@ -141,6 +152,7 @@ export default function EditProfileScreen({ navigation }) {
                         onChangeText={(text) => setFormData({ ...formData, bio: text })}
                         placeholder="Tell us about yourself..."
                         multiline
+                        delay={300}
                     />
 
                     <TouchableOpacity
@@ -149,7 +161,9 @@ export default function EditProfileScreen({ navigation }) {
                         style={styles.saveButton}
                     >
                         {isLoading ? (
-                            <ActivityIndicator color="#FFF" />
+                            <View style={[styles.gradientButton, { backgroundColor: COLORS.bgDarkSecondary }]}>
+                                <ActivityIndicator color="#FFF" />
+                            </View>
                         ) : (
                             <LinearGradient
                                 colors={GRADIENTS.primary}

@@ -62,14 +62,14 @@ exports.updateProfile = async (req, res) => {
              WHERE id = $9
              RETURNING *`,
             [
-                firstName || null,
-                lastName || null,
-                bio || null,
-                gender || null,
-                age || null,
-                location || null,
-                photos || null,
-                interests || null,
+                firstName !== undefined ? firstName : null,
+                lastName !== undefined ? lastName : null,
+                bio !== undefined ? bio : null,
+                gender !== undefined ? gender : null,
+                age !== undefined ? age : null,
+                location !== undefined ? location : null,
+                photos !== undefined ? photos : null,
+                interests !== undefined ? interests : null,
                 userId
             ]
         );

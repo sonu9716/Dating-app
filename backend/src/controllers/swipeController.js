@@ -9,9 +9,9 @@ exports.handleSwipe = async (req, res) => {
     }
 
     try {
-        // Record the swipe
+        // Record the swipe - Use 'action' column to match schema.sql
         await pool.query(
-            'INSERT INTO swipes (user_id, target_user_id, type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+            'INSERT INTO swipes (user_id, target_user_id, action) VALUES ($1, $2, $3) ON CONFLICT (user_id, target_user_id) DO UPDATE SET action = EXCLUDED.action',
             [userId, targetUserId, type]
         );
 
@@ -21,18 +21,18 @@ exports.handleSwipe = async (req, res) => {
         // If it's a like or super-like, check for a mutual match
         if (type === 'like' || type === 'super-like') {
             const matchResult = await pool.query(
-                'SELECT id FROM swipes WHERE user_id = $1 AND target_user_id = $2 AND (type = \'like\' OR type = \'super-like\')',
+                'SELECT id FROM swipes WHERE user_id = $1 AND target_user_id = $2 AND (action = \'like\' OR action = \'super-like\')',
                 [targetUserId, userId]
             );
 
             if (matchResult.rows.length > 0) {
                 isMatch = true;
-                // Create match record
+                // Create match record - Use user_id_1 and user_id_2 to match schema.sql
                 const newMatch = await pool.query(
-                    'INSERT INTO matches (user1_id, user2_id) VALUES ($1, $2) RETURNING id',
-                    [userId, targetUserId]
+                    'INSERT INTO matches (user_id_1, user_id_2) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id',
+                    [Math.min(userId, targetUserId), Math.max(userId, targetUserId)]
                 );
-                matchId = newMatch.rows[0].id;
+                matchId = newMatch.rows.length > 0 ? newMatch.rows[0].id : null;
             }
         }
 
