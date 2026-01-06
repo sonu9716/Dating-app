@@ -107,9 +107,9 @@ exports.getDiscovery = async (req, res) => {
         const userId = req.user.id;
         const { mode } = req.query;
 
-        // Basic discovery: Find users who are not the current user
+        // Discovery: Find users who are not the current user
         // and have not been swiped by the current user yet
-        // TODO: Implement specific filtering logic based on 'mode'
+        // Randomize order so every refresh feels new
         const result = await pool.query(
             `SELECT id, first_name, last_name, bio, gender, age, location, photos, interests
              FROM users 
@@ -117,20 +117,32 @@ exports.getDiscovery = async (req, res) => {
              AND id NOT IN (
                  SELECT target_user_id FROM swipes WHERE user_id = $1
              )
-             LIMIT 20`,
+             ORDER BY RANDOM()
+             LIMIT 40`,
             [userId]
         );
 
-        const profiles = result.rows.map(user => ({
-            id: user.id,
-            name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.first_name || 'Unknown',
-            age: user.age,
-            photos: user.photos || ['https://via.placeholder.com/400x600'],
-            bio: user.bio || 'No bio provided',
-            distance: Math.floor(Math.random() * 20) + 1, // Mock distance for now
-            interests: user.interests || ['Art', 'Music', 'Travel'],
-            isVerified: true
-        }));
+        const profiles = result.rows.map(user => {
+            // Build a clean interests array
+            const userInterests = Array.isArray(user.interests) && user.interests.length > 0
+                ? user.interests
+                : ['Art', 'Music', 'Travel'];
+
+            return {
+                id: user.id,
+                name: user.first_name && user.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : (user.first_name || user.email.split('@')[0] || 'Unknown'),
+                age: user.age || 22,
+                photos: user.photos && user.photos.length > 0
+                    ? user.photos
+                    : ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500'],
+                bio: user.bio || 'Check out my profile! ✨',
+                distance: Math.floor(Math.random() * 20) + 1,
+                interests: userInterests,
+                isVerified: true
+            };
+        });
 
         res.json({
             success: true,

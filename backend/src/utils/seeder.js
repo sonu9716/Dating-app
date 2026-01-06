@@ -71,7 +71,14 @@ async function seedGenZUsers() {
                     ) VALUES (
                         $1, $2, $3, $4, $5, 
                         $6, $7, $8, $9, point($10, $11), true
-                    ) ON CONFLICT (username) DO NOTHING
+                    ) ON CONFLICT (username) DO UPDATE SET
+                        first_name = EXCLUDED.first_name,
+                        last_name = EXCLUDED.last_name,
+                        age = EXCLUDED.age,
+                        gender = EXCLUDED.gender,
+                        bio = EXCLUDED.bio,
+                        interests = EXCLUDED.interests,
+                        verified = true
                 `, [
                     email, passwordHash, username, firstName, lastName,
                     18 + Math.floor(Math.random() * 12),
@@ -81,10 +88,10 @@ async function seedGenZUsers() {
                     lat, lng
                 ]);
 
-                // Also update photos
+                // Also update photos and ensure Sam gets one too
                 await pool.query(
-                    'UPDATE users SET photos =Array[$1] WHERE username = $2',
-                    [PHOTOS[Math.floor(Math.random() * PHOTOS.length)], username]
+                    'UPDATE users SET photos = Array[$1] WHERE username = $2 OR email = $3',
+                    [PHOTOS[Math.floor(Math.random() * PHOTOS.length)], username, 'sam@gmail.com']
                 );
             }
         }

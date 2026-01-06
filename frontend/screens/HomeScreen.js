@@ -58,6 +58,7 @@ export default function HomeScreen({ route, navigation }) {
       // Axios wraps in response.data, so full path is response.data.data.profiles
       if (response && response.data && response.data.data && response.data.data.profiles) {
         setProfiles(response.data.data.profiles);
+        setCurrentIndex(0); // Reset to first card
         console.log(`Loaded ${response.data.data.profiles.length} profiles`);
       } else {
         console.warn('No profiles in response:', response.data);
