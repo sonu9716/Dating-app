@@ -31,6 +31,8 @@ exports.getMessages = async (req, res) => {
             data: result.rows.map(row => ({
                 id: row.id,
                 text: row.encrypted_content,
+                messageType: row.message_type || 'text',
+                mediaUrl: row.media_url,
                 senderId: row.sender_id,
                 isOwn: row.sender_id === userId,
                 time: row.created_at,
@@ -45,11 +47,11 @@ exports.getMessages = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     const { matchId } = req.params;
-    const { message: text } = req.body;
+    const { message: text, messageType = 'text', mediaUrl = null, iv = 'none', authTag = 'none' } = req.body;
     const userId = req.user.id;
 
-    if (!text || !text.trim()) {
-        return res.status(400).json({ error: 'Message text is required' });
+    if (messageType === 'text' && (!text || !text.trim())) {
+        return res.status(400).json({ error: 'Message text is required for text messages' });
     }
 
     try {
@@ -68,8 +70,8 @@ exports.sendMessage = async (req, res) => {
             : matchResult.rows[0].user_id_1;
 
         const result = await pool.query(
-            'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [matchId, userId, text, 'none', 'none']
+            'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag, message_type, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [matchId, userId, text || '', iv, authTag, messageType, mediaUrl]
         );
 
         const newMessage = result.rows[0];
@@ -79,6 +81,8 @@ exports.sendMessage = async (req, res) => {
             data: {
                 id: newMessage.id,
                 text: newMessage.encrypted_content,
+                messageType: newMessage.message_type,
+                mediaUrl: newMessage.media_url,
                 senderId: newMessage.sender_id,
                 isOwn: true,
                 time: newMessage.created_at,
@@ -105,5 +109,24 @@ exports.markAsRead = async (req, res) => {
     } catch (err) {
         console.error('Mark read error:', err.message);
         res.status(500).json({ error: 'Server error marking messages as read' });
+    }
+};
+
+exports.uploadMedia = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No media file uploaded' });
+        }
+
+        const mediaUrl = `/uploads/${req.file.filename}`;
+        res.json({
+            success: true,
+            data: {
+                url: mediaUrl
+            }
+        });
+    } catch (err) {
+        console.error('Media upload error:', err.message);
+        res.status(500).json({ error: 'Server error during media upload' });
     }
 };

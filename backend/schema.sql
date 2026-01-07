@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS messages (
   encrypted_content TEXT NOT NULL,
   iv TEXT NOT NULL,
   auth_tag TEXT NOT NULL,
+  message_type VARCHAR(20) DEFAULT 'text',
+  media_url TEXT,
   read BOOLEAN DEFAULT false,
   read_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -132,3 +134,6 @@ DROP INDEX IF EXISTS idx_users_location;
 ALTER TABLE users ALTER COLUMN location TYPE VARCHAR(255);
 -- Re-create the index as a standard B-Tree index for strings
 CREATE INDEX IF NOT EXISTS idx_users_location ON users(location);
+-- Migration: Add message_type and media_url to messages
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(20) DEFAULT 'text';
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS media_url TEXT;

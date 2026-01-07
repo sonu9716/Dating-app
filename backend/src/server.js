@@ -42,7 +42,7 @@ io.on('connection', (socket) => {
 
   // Send message
   socket.on('message:send', async (data) => {
-    const { matchId, message } = data;
+    const { matchId, message, messageType = 'text', mediaUrl = null, iv = 'none', authTag = 'none' } = data;
     const userId = socket.userId;
 
     if (!userId) return;
@@ -50,8 +50,8 @@ io.on('connection', (socket) => {
     try {
       // Save message to database for persistence
       const result = await pool.query(
-        'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [matchId, userId, message, 'none', 'none']
+        'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag, message_type, media_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [matchId, userId, message || '', iv, authTag, messageType, mediaUrl]
       );
 
       const savedMsg = result.rows[0];
@@ -61,11 +61,13 @@ io.on('connection', (socket) => {
         id: savedMsg.id,
         matchId: parseInt(matchId),
         text: savedMsg.encrypted_content,
+        messageType: savedMsg.message_type,
+        mediaUrl: savedMsg.media_url,
         senderId: userId,
         time: savedMsg.created_at,
         isOwn: false
       });
-      console.log(`💬 Message saved and broadcast in match-${matchId}`);
+      console.log(`💬 ${messageType} message saved and broadcast in match-${matchId}`);
     } catch (err) {
       console.error('❌ Error saving socket message:', err.message);
     }
