@@ -28,7 +28,7 @@ export const encryptMessage = async (message, key) => {
     }
 
     const messageBytes = new TextEncoder().encode(message);
-    
+
     // In production, use proper Signal Protocol library
     // For now, using basic encryption
     const encrypted = await Crypto.digest(
@@ -92,10 +92,27 @@ export const generateToken = async (length = 32) => {
   }
 };
 
+/**
+ * Encrypt media metadata (for E2E)
+ */
+export const encryptMediaMetadata = async (metadata, key) => {
+  // Currently a placeholder following the existing text encryption pattern
+  return encryptMessage(JSON.stringify(metadata), key);
+};
+
+/**
+ * Decrypt media metadata
+ */
+export const decryptMediaMetadata = async (encryptedData, key) => {
+  return decryptMessage(encryptedData, key);
+};
+
 export default {
   generateEncryptionKey,
   encryptMessage,
   decryptMessage,
+  encryptMediaMetadata,
+  decryptMediaMetadata,
   hashPassword,
   generateToken,
 };

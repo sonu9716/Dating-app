@@ -131,6 +131,9 @@ export const messageAPI = {
     api.post(`/messages/${matchId}`, { message }),
   deleteMessage: (messageId) => api.delete(`/messages/${messageId}`),
   markAsRead: (matchId) => api.put(`/messages/${matchId}/read`),
+  uploadMedia: (matchId, formData) => api.post(`/messages/${matchId}/media`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 export default api;

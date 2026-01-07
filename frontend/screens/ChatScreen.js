@@ -11,7 +11,9 @@ import {
   StyleSheet,
   StatusBar,
   Image,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,14 +37,30 @@ const ChatBubble = ({ message, isOwn }) => (
       colors={isOwn ? GRADIENTS.primary : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.08)']}
       style={[
         styles.bubble,
-        isOwn ? styles.bubbleOwnShape : styles.bubbleMatchShape
+        isOwn ? styles.bubbleOwnShape : styles.bubbleMatchShape,
+        message.messageType === 'image' && styles.bubbleImage
       ]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Text style={[styles.bubbleText, isOwn ? styles.textWhite : styles.textSecondary]}>
-        {message.text}
-      </Text>
+      {message.messageType === 'image' ? (
+        <View>
+          <Image
+            source={{ uri: message.mediaUrl ? `https://dating-app-8da6.onrender.com${message.mediaUrl}` : 'https://via.placeholder.com/300' }}
+            style={styles.sentImage}
+            resizeMode="cover"
+          />
+          {message.text ? (
+            <Text style={[styles.bubbleText, styles.imageCaption, isOwn ? styles.textWhite : styles.textSecondary]}>
+              {message.text}
+            </Text>
+          ) : null}
+        </View>
+      ) : (
+        <Text style={[styles.bubbleText, isOwn ? styles.textWhite : styles.textSecondary]}>
+          {message.text}
+        </Text>
+      )}
     </LinearGradient>
     <Text style={styles.bubbleTime}>
       {message.time || '12:45 PM'}
@@ -94,6 +112,47 @@ export default function ChatScreen({ route, navigation }) {
       startTyping(match.matchId);
     } else {
       stopTyping(match.matchId);
+    }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        const selectedImage = result.assets[0];
+
+        // Prepare upload
+        const formData = new FormData();
+        const filename = selectedImage.uri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        formData.append('media', {
+          uri: selectedImage.uri,
+          name: filename,
+          type: type,
+        });
+
+        setIsSending(true);
+        // Step 1: Upload media
+        const uploadRes = await messageAPI.uploadMedia(route.params.match.matchId, formData);
+
+        if (uploadRes.data.success) {
+          // Step 2: Send message with media URL
+          // In a real E2E system, we would encrypt the URL/metadata here
+          sendMessage(route.params.match.matchId, '', 'image', uploadRes.data.data.url);
+        }
+      }
+    } catch (err) {
+      console.error('Pick image error:', err);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -191,6 +250,14 @@ export default function ChatScreen({ route, navigation }) {
         {/* Input Area */}
         <BlurView tint="dark" intensity={50} style={styles.inputArea}>
           <View style={styles.inputWrapper}>
+            <TouchableOpacity
+              onPress={handlePickImage}
+              style={styles.mediaButton}
+              disabled={isSending}
+            >
+              <Ionicons name="add-circle-outline" size={26} color={COLORS.neonPink} />
+            </TouchableOpacity>
+
             <TextInput
               style={styles.input}
               placeholder="Type a message..."
@@ -316,6 +383,21 @@ const styles = StyleSheet.create({
   bubbleMatchShape: {
     borderBottomLeftRadius: 2,
   },
+  bubbleImage: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  sentImage: {
+    width: 240,
+    height: 300,
+    borderRadius: RADIUS.lg,
+  },
+  imageCaption: {
+    paddingHorizontal: SPACING[4],
+    paddingVertical: SPACING[2],
+  },
   bubbleText: {
     fontSize: 15,
     lineHeight: 20,
@@ -345,9 +427,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: RADIUS.full,
-    paddingLeft: SPACING[4],
+    paddingLeft: SPACING[2],
     paddingRight: 4,
     paddingVertical: 4,
+  },
+  mediaButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     flex: 1,

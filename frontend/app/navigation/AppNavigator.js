@@ -7,6 +7,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../utils/theme';
 
@@ -106,12 +107,21 @@ function TabBarButton({ label, icon, onPress, isActive }) {
 }
 
 export default function AppNavigator() {
+  const getTabBarVisibility = (route) => {
+    const routeName = getFocusedRouteNameFromRoute(route);
+    if (routeName === 'ChatDetail') {
+      return 'none';
+    }
+    return 'flex';
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
+          display: getTabBarVisibility(route),
           backgroundColor: COLORS.bgDark,
           borderTopColor: 'rgba(255,255,255,0.05)',
           borderTopWidth: 1,

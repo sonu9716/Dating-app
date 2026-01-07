@@ -28,13 +28,19 @@ function chatReducer(state, action) {
       };
 
     case 'ADD_MESSAGE':
+      const newMsg = action.payload.message;
+      const existingMsgs = state.messages[action.payload.matchId] || [];
+      // Prevent duplicates by checking ID if available
+      if (newMsg.id && existingMsgs.find(m => m.id === newMsg.id)) {
+        return state;
+      }
       return {
         ...state,
         messages: {
           ...state.messages,
           [action.payload.matchId]: [
-            ...(state.messages[action.payload.matchId] || []),
-            action.payload.message,
+            ...existingMsgs,
+            newMsg,
           ],
         },
       };
@@ -195,8 +201,8 @@ export function ChatProvider({ children }) {
       dispatch({ type: 'SET_MATCHES', payload: matches });
     },
 
-    sendMessage: (matchId, message) => {
-      socketEmitters.sendMessage(matchId, message);
+    sendMessage: (matchId, message, messageType = 'text', mediaUrl = null) => {
+      socketEmitters.sendMessage(matchId, message, messageType, mediaUrl);
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
@@ -205,6 +211,8 @@ export function ChatProvider({ children }) {
             id: Date.now(),
             matchId,
             text: message,
+            messageType: messageType,
+            mediaUrl: mediaUrl,
             createdAt: new Date(),
             isOwn: true,
           },
