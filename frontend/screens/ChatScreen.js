@@ -119,7 +119,7 @@ export default function ChatScreen({ route, navigation }) {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.7,
       });
 
