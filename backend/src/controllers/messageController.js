@@ -30,11 +30,11 @@ exports.getMessages = async (req, res) => {
             success: true,
             data: result.rows.map(row => ({
                 id: row.id,
-                text: row.text,
+                text: row.encrypted_content,
                 senderId: row.sender_id,
                 isOwn: row.sender_id === userId,
                 time: row.created_at,
-                isRead: row.is_read
+                isRead: row.read
             }))
         });
     } catch (err) {
@@ -68,8 +68,8 @@ exports.sendMessage = async (req, res) => {
             : matchResult.rows[0].user_id_1;
 
         const result = await pool.query(
-            'INSERT INTO messages (match_id, sender_id, recipient_id, text) VALUES ($1, $2, $3, $4) RETURNING *',
-            [matchId, userId, recipientId, text]
+            'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [matchId, userId, text, 'none', 'none']
         );
 
         const newMessage = result.rows[0];
@@ -78,7 +78,7 @@ exports.sendMessage = async (req, res) => {
             success: true,
             data: {
                 id: newMessage.id,
-                text: newMessage.text,
+                text: newMessage.encrypted_content,
                 senderId: newMessage.sender_id,
                 isOwn: true,
                 time: newMessage.created_at,
@@ -97,7 +97,7 @@ exports.markAsRead = async (req, res) => {
 
     try {
         await pool.query(
-            'UPDATE messages SET is_read = true WHERE match_id = $1 AND recipient_id = $2 AND is_read = false',
+            'UPDATE messages SET read = true WHERE match_id = $1 AND sender_id != $2 AND read = false',
             [matchId, userId]
         );
 

@@ -54,6 +54,47 @@ router.delete('/swipes/:email', async (req, res) => {
     }
 });
 
+// Force a match between two users (for testing chat)
+router.post('/match-force', async (req, res) => {
+    try {
+        const { email1, email2 } = req.body;
+
+        if (!email1 || !email2) {
+            return res.status(400).json({ error: 'Both emails are required' });
+        }
+
+        const user1 = await pool.query('SELECT id FROM users WHERE email = $1', [email1]);
+        const user2 = await pool.query('SELECT id FROM users WHERE email = $1', [email2]);
+
+        if (user1.rows.length === 0 || user2.rows.length === 0) {
+            return res.status(404).json({ error: 'One or both users not found' });
+        }
+
+        const id1 = user1.rows[0].id;
+        const id2 = user2.rows[0].id;
+
+        // Create mutual likes
+        await pool.query(
+            'INSERT INTO swipes (user_id, target_user_id, action) VALUES ($1, $2, \'like\'), ($2, $1, \'like\') ON CONFLICT DO NOTHING',
+            [id1, id2]
+        );
+
+        // Create match
+        const matchResult = await pool.query(
+            'INSERT INTO matches (user_id_1, user_id_2) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id',
+            [Math.min(id1, id2), Math.max(id1, id2)]
+        );
+
+        res.json({
+            success: true,
+            message: `Match created between ${email1} and ${email2}`,
+            matchId: matchResult.rows.length > 0 ? matchResult.rows[0].id : 'Already matched'
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get total user count and breakdown
 router.get('/stats', async (req, res) => {
     try {

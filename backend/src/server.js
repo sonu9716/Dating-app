@@ -41,14 +41,34 @@ io.on('connection', (socket) => {
   });
 
   // Send message
-  socket.on('message:send', (data) => {
+  socket.on('message:send', async (data) => {
     const { matchId, message } = data;
-    io.to(`match-${matchId}`).emit('message:new', {
-      ...message,
-      matchId,
-      createdAt: new Date().toISOString()
-    });
-    console.log(`💬 Message sent in match-${matchId}`);
+    const userId = socket.userId;
+
+    if (!userId) return;
+
+    try {
+      // Save message to database for persistence
+      const result = await pool.query(
+        'INSERT INTO messages (match_id, sender_id, encrypted_content, iv, auth_tag) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [matchId, userId, message, 'none', 'none']
+      );
+
+      const savedMsg = result.rows[0];
+
+      // Broadcast to other users in the room (EXCEPT sender to prevent duplicates)
+      socket.to(`match-${matchId}`).emit('message:new', {
+        id: savedMsg.id,
+        matchId: parseInt(matchId),
+        text: savedMsg.encrypted_content,
+        senderId: userId,
+        time: savedMsg.created_at,
+        isOwn: false
+      });
+      console.log(`💬 Message saved and broadcast in match-${matchId}`);
+    } catch (err) {
+      console.error('❌ Error saving socket message:', err.message);
+    }
   });
 
   // Typing indicator
