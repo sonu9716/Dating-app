@@ -1,44 +1,54 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 
 /**
  * Register for push notifications
  * Returns the Expo Push Token or null
  */
 export async function registerForPushNotificationsAsync() {
-    let token;
+    try {
+        let token;
 
-    if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#FF233171',
-        });
-    }
-
-    if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-        }
-        if (finalStatus !== 'granted') {
-            console.warn('Failed to get push token for push notification!');
-            return null;
+        if (Platform.OS === 'android') {
+            await Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF233171',
+            });
         }
 
-        token = (await Notifications.getExpoPushTokenAsync({
-            projectId: 'a9a9455f-c8de-4683-8f9f-8880a9850f21', // Your projectId from app.json
-        })).data;
-        console.log('Push Token:', token);
-    } else {
-        // console.log('Must use physical device for Push Notifications');
-    }
+        if (Device.isDevice) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
 
-    return token;
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+
+            if (finalStatus !== 'granted') {
+                Alert.alert('Permission Required', 'Notification permissions were NOT granted. Please enable them in settings.');
+                return null;
+            }
+
+            token = (await Notifications.getExpoPushTokenAsync({
+                projectId: 'a9a9455f-c8de-4683-8f9f-8880a9850f21',
+            })).data;
+
+            console.log('Push Token Generated:', token);
+            // Alert.alert('Token Generated', 'Your device is ready for notifications!');
+        } else {
+            console.log('Push notifications require a physical device');
+        }
+
+        return token;
+    } catch (error) {
+        Alert.alert('Push Error', error.message);
+        console.error('Push Registration Error:', error);
+        return null;
+    }
 }
 
 /**

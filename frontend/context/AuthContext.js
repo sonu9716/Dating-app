@@ -8,6 +8,7 @@ import { secureStorage, appStorage } from '../utils/storage';
 import { authAPI, userAPI } from '../utils/api';
 import { socketEmitters } from '../utils/socket';
 import { registerForPushNotificationsAsync } from '../utils/notificationHelper';
+import { Alert } from 'react-native';
 
 export const AuthContext = createContext();
 
@@ -90,9 +91,11 @@ export function AuthProvider({ children }) {
       if (token) {
         await userAPI.updatePushToken(token);
         console.log('✅ Push token registered on server');
+        Alert.alert('Notifications Ready', 'Your device is now registered for live notifications! 🔔');
       }
     } catch (err) {
       console.error('Push token registration error:', err.message);
+      Alert.alert('Notification Error', 'Failed to register your device for notifications. You might miss important updates.');
     }
   };
 
