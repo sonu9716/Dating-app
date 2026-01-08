@@ -45,7 +45,11 @@ export async function registerForPushNotificationsAsync() {
 
         return token;
     } catch (error) {
-        Alert.alert('Push Error', error.message);
+        if (error.message.includes('FirebaseApp')) {
+            Alert.alert('Configuration Missing', 'This standalone APK needs a google-services.json file to handle push notifications. Please check the setup guide.');
+        } else {
+            Alert.alert('Push Error', error.message);
+        }
         console.error('Push Registration Error:', error);
         return null;
     }
