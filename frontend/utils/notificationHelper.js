@@ -38,7 +38,7 @@ export async function registerForPushNotificationsAsync() {
             })).data;
 
             console.log('Push Token Generated:', token);
-            // Alert.alert('Token Generated', 'Your device is ready for notifications!');
+            Alert.alert('Token Generated', `Your device is ready!\n\nToken: ${token}`);
         } else {
             console.log('Push notifications require a physical device');
         }

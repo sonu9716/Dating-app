@@ -10,6 +10,7 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
+  Clipboard,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +21,26 @@ import { useAuth } from '../context/AuthContext';
 
 export default function ProfileScreen({ navigation }) {
   const { state: authState, logout } = useAuth();
+  const [isCopying, setIsCopying] = useState(false);
   const user = authState.user;
+
+  const handleCopyToken = async () => {
+    setIsCopying(true);
+    try {
+      const { registerForPushNotificationsAsync } = require('../utils/notificationHelper');
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        Clipboard.setString(token);
+        Alert.alert('Copied! ✅', `Token: ${token.substring(0, 20)}...\n\nPaste this in the chat.`);
+      } else {
+        Alert.alert('No Token', 'Could not generate a token. Are you on a physical device?');
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setIsCopying(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -57,6 +77,7 @@ export default function ProfileScreen({ navigation }) {
     { title: 'Settings', icon: 'settings-outline', screen: 'Settings' },
     { title: 'Safety Center', icon: 'shield-checkmark-outline', screen: 'Safety' },
     { title: 'Help & Support', icon: 'help-circle-outline', screen: 'Support' },
+    { title: 'Copy Push Token (Debug)', icon: 'copy-outline', action: handleCopyToken, color: COLORS.modernTeal },
     { title: 'Logout', icon: 'log-out-outline', action: handleLogout, color: COLORS.coral },
   ];
 
