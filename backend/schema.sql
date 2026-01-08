@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   verified BOOLEAN DEFAULT false,
   public_key TEXT UNIQUE,
   private_key_encrypted TEXT,
+  push_token VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -137,3 +138,5 @@ CREATE INDEX IF NOT EXISTS idx_users_location ON users(location);
 -- Migration: Add message_type and media_url to messages
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(20) DEFAULT 'text';
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS media_url TEXT;
+-- Migration: Add push_token to users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS push_token VARCHAR(255);

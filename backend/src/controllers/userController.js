@@ -102,6 +102,30 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+exports.updatePushToken = async (req, res) => {
+    const userId = req.user.id;
+    const { pushToken } = req.body;
+
+    if (!pushToken) {
+        return res.status(400).json({ error: 'Push token is required' });
+    }
+
+    try {
+        await pool.query(
+            'UPDATE users SET push_token = $1 WHERE id = $2',
+            [pushToken, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Push token updated successfully'
+        });
+    } catch (err) {
+        console.error('Update push token error:', err.message);
+        res.status(500).json({ error: 'Server error updating push token' });
+    }
+};
+
 exports.getDiscovery = async (req, res) => {
     try {
         const userId = req.user.id;

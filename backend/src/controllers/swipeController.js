@@ -33,6 +33,41 @@ exports.handleSwipe = async (req, res) => {
                     [Math.min(userId, targetUserId), Math.max(userId, targetUserId)]
                 );
                 matchId = newMatch.rows.length > 0 ? newMatch.rows[0].id : null;
+
+                // TRIGGER MATCH NOTIFICATIONS
+                try {
+                    const { sendPushNotification } = require('../utils/notificationService');
+                    const usersResult = await pool.query(
+                        'SELECT id, first_name, push_token FROM users WHERE id IN ($1, $2)',
+                        [userId, targetUserId]
+                    );
+
+                    const swiper = usersResult.rows.find(u => u.id === userId);
+                    const swiped = usersResult.rows.find(u => u.id === targetUserId);
+
+                    if (swiper && swiped) {
+                        // Notify Swiper
+                        if (swiper.push_token) {
+                            sendPushNotification(
+                                [swiper.push_token],
+                                "It's a Match! 💘",
+                                `You and ${swiped.first_name} liked each other! Tap to chat.`,
+                                { type: 'MATCH', matchId }
+                            );
+                        }
+                        // Notify Swiped
+                        if (swiped.push_token) {
+                            sendPushNotification(
+                                [swiped.push_token],
+                                "New Match! ✨",
+                                `${swiper.first_name} liked you back! It's a match.`,
+                                { type: 'MATCH', matchId }
+                            );
+                        }
+                    }
+                } catch (notiErr) {
+                    console.error('Error sending match notifications:', notiErr.message);
+                }
             }
         }
 

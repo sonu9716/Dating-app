@@ -68,6 +68,40 @@ io.on('connection', (socket) => {
         isOwn: false
       });
       console.log(`💬 ${messageType} message saved and broadcast in match-${matchId}`);
+
+      // TRIGGER PUSH NOTIFICATION
+      try {
+        const { sendPushNotification } = require('./utils/notificationService');
+        // Find recipient and sender info
+        const matchInfo = await pool.query(
+          'SELECT user_id_1, user_id_2 FROM matches WHERE id = $1',
+          [matchId]
+        );
+
+        if (matchInfo.rows.length > 0) {
+          const recipientId = matchInfo.rows[0].user_id_1 === userId
+            ? matchInfo.rows[0].user_id_2
+            : matchInfo.rows[0].user_id_1;
+
+          const senderResult = await pool.query('SELECT first_name FROM users WHERE id = $1', [userId]);
+          const recipientResult = await pool.query('SELECT push_token FROM users WHERE id = $1', [recipientId]);
+
+          const senderName = senderResult.rows[0]?.first_name || 'Someone';
+          const pushToken = recipientResult.rows[0]?.push_token;
+
+          if (pushToken) {
+            const body = messageType === 'image' ? 'Sent you a photo 📸' : (message || 'New message');
+            sendPushNotification(
+              [pushToken],
+              `New message from ${senderName}`,
+              body,
+              { type: 'MESSAGE', matchId, senderId: userId }
+            );
+          }
+        }
+      } catch (notiErr) {
+        console.error('❌ Error sending socket push notification:', notiErr.message);
+      }
     } catch (err) {
       console.error('❌ Error saving socket message:', err.message);
     }

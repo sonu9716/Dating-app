@@ -76,6 +76,28 @@ exports.sendMessage = async (req, res) => {
 
         const newMessage = result.rows[0];
 
+        // TRIGGER MESSAGE NOTIFICATION
+        try {
+            const { sendPushNotification } = require('../utils/notificationService');
+            const senderResult = await pool.query('SELECT first_name FROM users WHERE id = $1', [userId]);
+            const recipientResult = await pool.query('SELECT push_token FROM users WHERE id = $1', [recipientId]);
+
+            const senderName = senderResult.rows[0]?.first_name || 'Someone';
+            const pushToken = recipientResult.rows[0]?.push_token;
+
+            if (pushToken) {
+                const body = messageType === 'image' ? 'Sent you a photo 📸' : (text || 'New message');
+                sendPushNotification(
+                    [pushToken],
+                    `New message from ${senderName}`,
+                    body,
+                    { type: 'MESSAGE', matchId, senderId: userId }
+                );
+            }
+        } catch (notiErr) {
+            console.error('Error sending message notification:', notiErr.message);
+        }
+
         res.status(201).json({
             success: true,
             data: {
