@@ -7,6 +7,7 @@ import React, { createContext, useReducer, useEffect } from 'react';
 import { secureStorage, appStorage } from '../utils/storage';
 import { authAPI, userAPI } from '../utils/api';
 import { socketEmitters } from '../utils/socket';
+import { registerForPushNotificationsAsync } from '../utils/notificationHelper';
 
 export const AuthContext = createContext();
 
@@ -83,6 +84,18 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const registerPushToken = async () => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        await userAPI.updatePushToken(token);
+        console.log('✅ Push token registered on server');
+      }
+    } catch (err) {
+      console.error('Push token registration error:', err.message);
+    }
+  };
+
   // Restore token on app start
   useEffect(() => {
     const bootstrapAsync = async () => {
@@ -93,6 +106,9 @@ export function AuthProvider({ children }) {
           const response = await userAPI.getProfile();
           dispatch({ type: 'RESTORE_TOKEN', payload: response.data.data });
           socketEmitters.authenticate(token);
+
+          // Register for push notifications
+          registerPushToken();
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: null });
         }
@@ -119,6 +135,10 @@ export function AuthProvider({ children }) {
         socketEmitters.authenticate(token);
 
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+
+        // Register for push notifications
+        registerPushToken();
+
         return { success: true, user };
       } catch (error) {
         const message = error.response?.data?.message || 'Login failed';
@@ -139,6 +159,10 @@ export function AuthProvider({ children }) {
         socketEmitters.authenticate(token);
 
         dispatch({ type: 'SIGNUP_SUCCESS', payload: user });
+
+        // Register for push notifications
+        registerPushToken();
+
         return { success: true, user };
       } catch (error) {
         const message = error.response?.data?.message || 'Signup failed';

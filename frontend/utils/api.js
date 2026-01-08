@@ -106,6 +106,7 @@ export const userAPI = {
   deletePhoto: (photoUrl) => api.delete('/users/photo', { data: { photoUrl } }),
   getPreferences: () => api.get('/users/preferences'),
   updatePreferences: (data) => api.put('/users/preferences', data),
+  updatePushToken: (pushToken) => api.put('/users/push-token', { pushToken }),
   getDiscovery: (mode) => api.get('/users/discovery', { params: { mode } }),
 };
 
