@@ -29,14 +29,19 @@ import { swipeAPI, userAPI } from '../utils/api';
 import ProfileCard from '../components/ProfileCard';
 import ActionButtons from '../components/ActionButtons';
 import DiscoveryHeader from '../components/DiscoveryHeader';
+import MatchModal from '../components/MatchModal';
+import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 const SWIPE_THRESHOLD = width * 0.25;
 
 export default function HomeScreen({ route, navigation }) {
+  const { state: authState } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchData, setMatchData] = useState(null);
   const zenzMode = route?.params?.mode;
   const zenzTitle = route?.params?.title;
 
@@ -88,30 +93,13 @@ export default function HomeScreen({ route, navigation }) {
         const response = await swipeAPI.like(userId);
 
         if (response.data.data && response.data.data.isMatch) {
-          Alert.alert(
-            "It's a Match! 🔥",
-            `You and ${profileName} have liked each other.`,
-            [
-              { text: 'Keep Swiping', onPress: nextCard },
-              {
-                text: 'Send Message',
-                onPress: () => {
-                  nextCard();
-                  navigation.navigate('ChatTab', {
-                    screen: 'ChatDetail',
-                    params: {
-                      match: {
-                        id: userId,
-                        matchId: response.data.data.matchId,
-                        name: profileName,
-                        avatar: profiles[currentIndex].photos[0]
-                      }
-                    }
-                  });
-                }
-              }
-            ]
-          );
+          setMatchData({
+            id: userId,
+            matchId: response.data.data.matchId,
+            name: profileName,
+            avatar: profiles[currentIndex].photos[0]
+          });
+          setShowMatchModal(true);
         } else {
           nextCard();
         }
@@ -250,6 +238,25 @@ export default function HomeScreen({ route, navigation }) {
       <DiscoveryHeader
         onSettings={() => navigation.navigate('Settings')}
         onFilter={() => navigation.navigate('Preferences')}
+      />
+
+      <MatchModal
+        visible={showMatchModal}
+        userAvatar={authState.user?.avatar}
+        matchAvatar={matchData?.avatar}
+        matchName={matchData?.name}
+        onKeepSwiping={() => {
+          setShowMatchModal(false);
+          nextCard();
+        }}
+        onSendMessage={() => {
+          setShowMatchModal(false);
+          nextCard();
+          navigation.navigate('ChatTab', {
+            screen: 'ChatDetail',
+            params: { match: matchData }
+          });
+        }}
       />
 
       {zenzMode && (
