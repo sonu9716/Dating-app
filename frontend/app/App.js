@@ -7,6 +7,7 @@ import { SafetyProvider } from '../context/SafetyContext';
 import RootNavigator from './navigation/RootNavigator';
 import * as Notifications from 'expo-notifications';
 import { configureNotifications } from '../utils/notificationHelper';
+import { navigationRef } from './navigation/navigationRef';
 
 export default function App() {
   React.useEffect(() => {
@@ -20,8 +21,25 @@ export default function App() {
 
     // Listener for when a user taps on a notification
     const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('👆 Notification Tapped:', response.notification.request.content.data);
-      // Logic for deep linking could go here in the future
+      const data = response.notification.request.content.data;
+      console.log('👆 Notification Tapped:', data);
+
+      if (data && data.matchId) {
+        // Navigate to Chat detailing
+        // We use navigate on the ref to ensure it works even if not in a component
+        if (navigationRef.isReady()) {
+          // Navigate to ChatTab, then inside it, navigation to ChatDetail
+          navigationRef.navigate('ChatTab', {
+            screen: 'ChatDetail',
+            params: { match: { matchId: data.matchId } }
+          });
+        }
+      } else if (data && data.type === 'MATCH') {
+        // If it's a new match alert, go to the chat list
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('ChatTab', { screen: 'ChatList' });
+        }
+      }
     });
 
     return () => {
@@ -35,7 +53,7 @@ export default function App() {
       <AuthProvider>
         <SafetyProvider>
           <ChatProvider>
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef}>
               <RootNavigator />
             </NavigationContainer>
           </ChatProvider>
