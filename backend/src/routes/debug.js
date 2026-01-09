@@ -119,4 +119,31 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// TEST DISCOVERY FOR A SPECIFIC USER ID
+router.get('/discovery-test/:userId', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const { getDiscovery } = require('../controllers/userController');
+
+        // Mock Response to capture output
+        let responseData = null;
+        const mockRes = {
+            json: (data) => { responseData = data; res.json(data); },
+            status: (code) => ({
+                json: (data) => { responseData = data; res.status(code).json(data); }
+            })
+        };
+
+        const mockReq = {
+            user: { id: userId },
+            query: { mode: req.query.mode }
+        };
+
+        console.log(`🧪 Debug: Testing discovery for User ID ${userId}`);
+        await getDiscovery(mockReq, mockRes);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
