@@ -62,18 +62,25 @@ export default function HomeScreen({ route, navigation }) {
       // Backend returns { success: true, data: { profiles: [...] } }
       // Axios wraps in response.data, so full path is response.data.data.profiles
       if (response && response.data && response.data.data && response.data.data.profiles) {
-        setProfiles(response.data.data.profiles);
+        const loadedProfiles = response.data.data.profiles;
+        setProfiles(loadedProfiles);
         setCurrentIndex(0); // Reset to first card
-        console.log(`Loaded ${response.data.data.profiles.length} profiles`);
+        Alert.alert('Discovery Debug',
+          `Server: ${api.defaults.baseURL}\n` +
+          `User: ${authState.user?.email} (ID: ${authState.user?.id})\n` +
+          `Profiles: ${loadedProfiles.length}`
+        );
       } else {
         console.warn('No profiles in response:', response.data);
         setProfiles([]);
+        Alert.alert('Discovery Debug', 'Response success but no data!');
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
       console.error('Error response:', error.response?.data);
       // Don't set fallback data - let user see empty state to know something is wrong
       setProfiles([]);
+      Alert.alert('Discovery Error', error.response?.data?.error || error.message || 'Failed to load profiles');
     } finally {
       setIsLoading(false);
     }

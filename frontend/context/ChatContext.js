@@ -56,13 +56,13 @@ function chatReducer(state, action) {
       };
 
     case 'DELETE_MESSAGE':
+      const targetMatchId = String(action.payload.matchId);
       return {
         ...state,
         messages: {
           ...state.messages,
-          [action.payload.matchId]: state.messages[
-            action.payload.matchId
-          ].filter((msg) => msg.id !== action.payload.messageId),
+          [targetMatchId]: (state.messages[targetMatchId] || [])
+            .filter((msg) => msg.id !== action.payload.messageId),
         },
       };
 
@@ -210,7 +210,7 @@ export function ChatProvider({ children }) {
           matchId: String(matchId),
           message: {
             id: Date.now(),
-            matchId: parseInt(matchId),
+            matchId: String(matchId),
             text: message,
             messageType: messageType,
             mediaUrl: mediaUrl,
