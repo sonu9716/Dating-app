@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, RADIUS, GRADIENTS } from '../utils/theme';
-import { messageAPI } from '../utils/api';
+import { messageAPI, matchAPI } from '../utils/api';
 import { useChat } from '../context/ChatContext';
 import { useSafety } from '../context/SafetyContext';
 import SafetyBanner from '../components/SafetyBanner';
@@ -69,8 +69,9 @@ const ChatBubble = ({ message, isOwn }) => (
 );
 
 export default function ChatScreen({ route, navigation }) {
-  const { match } = route.params;
-  const { state, sendMessage, startTyping, stopTyping } = useChat();
+  const { match: initialMatch } = route.params;
+  const [match, setMatch] = useState(initialMatch);
+  const { state, getMessages, sendMessage, startTyping, stopTyping } = useChat();
   const { liveSession, startLiveSession, endLiveSession, triggerEmergency } = useSafety();
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -79,15 +80,24 @@ export default function ChatScreen({ route, navigation }) {
   const flatListRef = useRef();
 
   useEffect(() => {
-    loadMessages();
-  }, [match.matchId]);
+    loadData();
+  }, [initialMatch.matchId]);
 
-  const loadMessages = async () => {
+  const loadData = async () => {
     try {
       setIsLoading(true);
-      await messageAPI.getMessages(match.matchId);
+
+      // If match object is minimal (only has matchId from deep link), fetch full profile
+      if (!match.name || !match.avatar) {
+        const response = await matchAPI.getMatch(initialMatch.matchId);
+        if (response.data.success) {
+          setMatch(response.data.data);
+        }
+      }
+
+      await getMessages(initialMatch.matchId);
     } catch (err) {
-      console.error('Load messages error:', err);
+      console.error('Load chat data error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -156,9 +166,9 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  const messages = state.messages[match.matchId] || [];
+  const messages = state.messages[String(match.matchId)] || [];
   const isOnline = state.onlineUsers[match.id];
-  const isTyping = state.typingUsers[match.matchId];
+  const isTyping = state.typingUsers[String(match.matchId)];
 
   return (
     <View style={styles.container}>

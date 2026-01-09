@@ -31,7 +31,7 @@ export default function App() {
           // Navigate to ChatTab, then inside it, navigation to ChatDetail
           navigationRef.navigate('ChatTab', {
             screen: 'ChatDetail',
-            params: { match: { matchId: data.matchId } }
+            params: { match: { matchId: String(data.matchId) } }
           });
         }
       } else if (data && data.type === 'MATCH') {

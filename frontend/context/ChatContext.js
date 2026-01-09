@@ -5,6 +5,7 @@
 
 import React, { createContext, useReducer, useEffect } from 'react';
 import { socket, socketEmitters } from '../utils/socket';
+import { messageAPI } from '../utils/api';
 
 export const ChatContext = createContext();
 
@@ -38,9 +39,9 @@ function chatReducer(state, action) {
         ...state,
         messages: {
           ...state.messages,
-          [action.payload.matchId]: [
-            ...existingMsgs,
+          [String(action.payload.matchId)]: [
             newMsg,
+            ...existingMsgs,
           ],
         },
       };
@@ -50,7 +51,7 @@ function chatReducer(state, action) {
         ...state,
         messages: {
           ...state.messages,
-          [action.payload.matchId]: action.payload.messages,
+          [String(action.payload.matchId)]: action.payload.messages,
         },
       };
 
@@ -127,7 +128,7 @@ export function ChatProvider({ children }) {
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
-          matchId: data.matchId,
+          matchId: String(data.matchId),
           message: data,
         },
       });
@@ -206,10 +207,10 @@ export function ChatProvider({ children }) {
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
-          matchId,
+          matchId: String(matchId),
           message: {
             id: Date.now(),
-            matchId,
+            matchId: parseInt(matchId),
             text: message,
             messageType: messageType,
             mediaUrl: mediaUrl,
@@ -231,6 +232,25 @@ export function ChatProvider({ children }) {
 
     stopTyping: (matchId) => {
       socketEmitters.stopTyping(matchId);
+    },
+
+    getMessages: async (matchId) => {
+      try {
+        const response = await messageAPI.getMessages(matchId);
+        if (response.data.success) {
+          dispatch({
+            type: 'SET_MESSAGES',
+            payload: {
+              matchId,
+              messages: response.data.data
+            }
+          });
+        }
+        return response.data;
+      } catch (err) {
+        console.error('ChatContext: getMessages error', err);
+        throw err;
+      }
     },
 
     clearError: () => {
