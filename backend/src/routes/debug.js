@@ -146,4 +146,27 @@ router.get('/discovery-test/:userId', async (req, res) => {
     }
 });
 
+// RESET DISCOVERY FOR A SPECIFIC USER ID (CLEAR ALL SWIPES)
+router.post('/reset-discovery/:userId', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+
+        // 1. Delete all swipes by this user
+        await pool.query('DELETE FROM swipes WHERE user_id = $1', [userId]);
+
+        // 2. Delete all matches (and associated messages) for this user
+        // Note: In production you might want soft deletes, but for debug this is what's requested
+        await pool.query('DELETE FROM matches WHERE user_id_1 = $1 OR user_id_2 = $1', [userId]);
+
+        console.log(`🧹 Debug: Reset discovery and matches for User ID ${userId}`);
+
+        res.json({
+            success: true,
+            message: `Cleared all swipes and matches for User ${userId}. Discovery should now be full.`
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

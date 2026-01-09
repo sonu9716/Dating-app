@@ -131,20 +131,28 @@ exports.getDiscovery = async (req, res) => {
         const userId = req.user.id;
         const { mode } = req.query;
 
-        // Discovery: Find users who are not the current user
-        // and have not been swiped by the current user yet
-        // Randomize order so every refresh feels new
-        const result = await pool.query(
-            `SELECT id, first_name, last_name, bio, gender, age, location, photos, interests
-             FROM users 
-             WHERE id != $1 
-             AND id NOT IN (
-                 SELECT target_user_id FROM swipes WHERE user_id = $1
-             )
-             ORDER BY RANDOM()
-             LIMIT 40`,
-            [userId]
-        );
+        let query = `
+            SELECT id, first_name, last_name, bio, gender, age, location, photos, interests
+            FROM users 
+            WHERE id != $1 
+            AND id NOT IN (
+                SELECT target_user_id FROM swipes WHERE user_id = $1
+            )
+        `;
+        let queryParams = [userId];
+
+        // MODE FILTERING
+        if (mode === 'exclusive') {
+            query += ` AND verified = true `;
+        } else if (mode && mode !== 'regular' && mode !== 'all') {
+            // Filter by looking_for if it matches a category
+            query += ` AND looking_for = $2 `;
+            queryParams.push(mode);
+        }
+
+        query += ` ORDER BY RANDOM() LIMIT 40`;
+
+        const result = await pool.query(query, queryParams);
 
         const profiles = result.rows.map(user => {
             // Build a clean interests array
