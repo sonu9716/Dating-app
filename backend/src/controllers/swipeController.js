@@ -32,7 +32,19 @@ exports.handleSwipe = async (req, res) => {
                     'INSERT INTO matches (user_id_1, user_id_2) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id',
                     [Math.min(userId, targetUserId), Math.max(userId, targetUserId)]
                 );
-                matchId = newMatch.rows.length > 0 ? newMatch.rows[0].id : null;
+
+                if (newMatch.rows.length > 0) {
+                    matchId = newMatch.rows[0].id;
+                } else {
+                    // Match already exists, fetch ID
+                    const existingMatch = await pool.query(
+                        'SELECT id FROM matches WHERE (user_id_1 = $1 AND user_id_2 = $2)',
+                        [Math.min(userId, targetUserId), Math.max(userId, targetUserId)]
+                    );
+                    if (existingMatch.rows.length > 0) {
+                        matchId = existingMatch.rows[0].id;
+                    }
+                }
 
                 // TRIGGER MATCH NOTIFICATIONS
                 try {
