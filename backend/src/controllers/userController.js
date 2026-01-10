@@ -126,36 +126,69 @@ exports.updatePushToken = async (req, res) => {
     }
 };
 
+exports.updateLiveLocation = async (req, res) => {
+    const userId = req.user.id;
+    const { latitude, longitude } = req.body;
+
+    if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    try {
+        await pool.query(
+            'UPDATE users SET last_lat = $1, last_lng = $2, last_active = CURRENT_TIMESTAMP WHERE id = $3',
+            [latitude, longitude, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Location updated successfully'
+        });
+    } catch (err) {
+        console.error('Update live location error:', err.message);
+        res.status(500).json({ error: 'Server error updating live location' });
+    }
+};
+
 exports.getDiscovery = async (req, res) => {
     try {
         const userId = req.user.id;
         const { mode } = req.query;
 
+        // Fetch user's own location for distance calculation
+        const userLocResult = await pool.query('SELECT last_lat, last_lng FROM users WHERE id = $1', [userId]);
+        const { last_lat: userLat, last_lng: userLng } = userLocResult.rows[0];
+
         let query = `
-            SELECT id, first_name, last_name, bio, gender, age, location, photos, interests
+            SELECT id, first_name, last_name, bio, gender, age, location, photos, interests, last_lat, last_lng,
+                   (6371 * acos(cos(radians($2)) * cos(radians(last_lat)) * cos(radians(last_lng) - radians($3)) + sin(radians($2)) * sin(radians(last_lat)))) AS distance_km
             FROM users 
             WHERE id != $1 
             AND id NOT IN (
                 SELECT target_user_id FROM swipes WHERE user_id = $1
             )
         `;
-        let queryParams = [userId];
+        let queryParams = [userId, userLat || 0, userLng || 0];
 
         // MODE FILTERING
         if (mode === 'exclusive') {
             query += ` AND verified = true `;
         } else if (mode && mode !== 'regular' && mode !== 'all') {
             // Filter by looking_for if it matches a category
-            query += ` AND looking_for = $2 `;
+            query += ` AND looking_for = $4 `;
             queryParams.push(mode);
         }
 
-        query += ` ORDER BY RANDOM() LIMIT 40`;
+        // Only show users with location if user has location, otherwise random
+        if (userLat && userLng) {
+            query += ` ORDER BY distance_km ASC, RANDOM() LIMIT 40`;
+        } else {
+            query += ` ORDER BY RANDOM() LIMIT 40`;
+        }
 
         const result = await pool.query(query, queryParams);
 
         const profiles = result.rows.map(user => {
-            // Build a clean interests array
             const userInterests = Array.isArray(user.interests) && user.interests.length > 0
                 ? user.interests
                 : ['Art', 'Music', 'Travel'];
@@ -170,7 +203,7 @@ exports.getDiscovery = async (req, res) => {
                     ? user.photos
                     : ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500'],
                 bio: user.bio || 'Check out my profile! ✨',
-                distance: Math.floor(Math.random() * 20) + 1,
+                distance: user.distance_km ? Math.round(user.distance_km * 10) / 10 : Math.floor(Math.random() * 20) + 1,
                 interests: userInterests,
                 isVerified: true
             };

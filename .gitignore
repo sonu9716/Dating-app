@@ -2,3 +2,11 @@
 node_modules/
 .env
 .DS_Store
+*.json
+!package.json
+!package-lock.json
+!app.json
+!google-services.json
+# Exceptions for standard config files
+# But usually firebase adminsdk json should be ignored
+*-firebase-adminsdk-*.json

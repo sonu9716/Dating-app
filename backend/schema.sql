@@ -20,10 +20,15 @@ CREATE TABLE IF NOT EXISTS users (
   public_key TEXT UNIQUE,
   private_key_encrypted TEXT,
   push_token VARCHAR(255),
+  last_lat DOUBLE PRECISION,
+  last_lng DOUBLE PRECISION,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for users
+CREATE INDEX IF NOT EXISTS idx_users_last_lat_lng ON users(last_lat, last_lng);
 
 -- Indexes for users
 CREATE INDEX IF NOT EXISTS idx_users_age_gender ON users(age, gender) WHERE verified = true;

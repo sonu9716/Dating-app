@@ -7,8 +7,15 @@ exports.getMatches = async (req, res) => {
         const result = await pool.query(
             `SELECT m.id as match_id, m.matched_at,
               u.id, u.first_name, u.last_name, u.photos, u.username,
-              (SELECT encrypted_content FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message,
-              (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message_time
+              (SELECT 
+                CASE 
+                  WHEN message_type = 'image' THEN '[Image]'
+                  WHEN message_type = 'voice' THEN '[Voice Note]'
+                  ELSE encrypted_content 
+                END
+               FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message,
+              (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
+              (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != $1 AND read = false) as unread_count
        FROM matches m
        JOIN users u ON (m.user_id_1 = u.id OR m.user_id_2 = u.id)
        WHERE (m.user_id_1 = $1 OR m.user_id_2 = $1) AND u.id != $1
@@ -26,7 +33,8 @@ exports.getMatches = async (req, res) => {
                 username: row.username,
                 lastMessage: row.last_message,
                 lastMessageTime: row.last_message_time,
-                matchedAt: row.matched_at
+                matchedAt: row.matched_at,
+                unreadCount: parseInt(row.unread_count || 0)
             }))
         });
     } catch (err) {
@@ -41,7 +49,7 @@ exports.getMatch = async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT m.*, u.id as user_id, u.first_name, u.last_name, u.photos, u.bio
+            `SELECT m.*, u.id as user_id, u.first_name, u.last_name, u.photos, u.bio, u.interests
        FROM matches m
        JOIN users u ON (m.user_id_1 = u.id OR m.user_id_2 = u.id)
        WHERE m.id = $1 AND (m.user_id_1 = $2 OR m.user_id_2 = $2) AND u.id != $2`,
@@ -61,7 +69,8 @@ exports.getMatch = async (req, res) => {
                 name: `${row.first_name} ${row.last_name || ''}`.trim(),
                 avatar: row.photos?.[0],
                 photos: row.photos,
-                bio: row.bio
+                bio: row.bio,
+                interests: row.interests || []
             }
         });
     } catch (err) {

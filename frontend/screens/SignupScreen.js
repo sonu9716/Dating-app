@@ -24,15 +24,47 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, TYPOGRAPHY, RADIUS, GRADIENTS } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get('window');
 
 const interests = ['Travel', 'Art', 'Sports', 'Music', 'Food', 'Gaming', 'Reading', 'Fitness', 'Photography', 'Outdoor'];
 
 export default function SignupScreen({ navigation }) {
-  const { signup } = useAuth();
+  const { signup, googleLogin } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Google Auth Configuration
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleLogin(id_token);
+    } else if (response?.type === 'error') {
+      Alert.alert('Google Login Error', 'Failed to authenticate with Google');
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken) => {
+    setIsLoading(true);
+    try {
+      const result = await googleLogin(idToken);
+      if (!result.success) {
+        Alert.alert('Google Login Failed', result.error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -147,6 +179,23 @@ export default function SignupScreen({ navigation }) {
               onChangeText={(text) => setFormData({ ...formData, password: text })}
               secureTextEntry
             />
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: SPACING[2] }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+              <Text style={{ paddingHorizontal: SPACING[4], color: COLORS.textTertiary, fontSize: 12 }}>
+                Or
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+            </View>
+
+            <TouchableOpacity
+              onPress={() => promptAsync()}
+              disabled={!request}
+              style={[styles.socialButton, { opacity: !request ? 0.5 : 1 }]}
+            >
+              <Ionicons name="logo-google" size={20} color={COLORS.textWhite} />
+              <Text style={styles.socialButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
           </Animated.View>
         );
       case 2:
@@ -427,6 +476,22 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
+  },
+  socialButton: {
+    height: 54,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  socialButtonText: {
+    color: COLORS.textWhite,
+    fontSize: 16,
+    fontWeight: '600',
   },
   nextButtonText: {
     color: COLORS.textWhite,

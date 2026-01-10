@@ -22,6 +22,7 @@ import PhotosScreen from '../../screens/PhotosScreen';
 import PreferencesScreen from '../../screens/PreferencesScreen';
 import SettingsScreen from '../../screens/SettingsScreen';
 import SafetyCenterScreen from '../../screens/SafetyCenterScreen';
+import UserProfileScreen from '../../screens/UserProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -51,6 +52,7 @@ function ChatStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ChatList" component={ChatListScreen} />
       <Stack.Screen name="ChatDetail" component={ChatScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 }

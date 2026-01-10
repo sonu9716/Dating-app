@@ -65,8 +65,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "a9a9455f-c8de-4683-8f9f-8880a9850f21"
+        "projectId": "b2d42d66-abbd-4809-af9b-eb1badb97bc0"
       }
-    }
+    },
+    "owner": "sonusingh500"
   }
 }

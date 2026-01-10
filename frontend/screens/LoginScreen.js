@@ -25,18 +25,51 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, TYPOGRAPHY, RADIUS, GRADIENTS } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get('window');
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+
+  // Google Auth Configuration
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    // expoClientId: 'your-expo-client-id', // For testing in Expo Go
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleLogin(id_token);
+    } else if (response?.type === 'error') {
+      Alert.alert('Google Login Error', 'Failed to authenticate with Google');
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken) => {
+    setIsLoading(true);
+    try {
+      const result = await googleLogin(idToken);
+      if (!result.success) {
+        Alert.alert('Google Login Failed', result.error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Animation shared values
   const orb1Value = useSharedValue(0);
@@ -289,18 +322,23 @@ export default function LoginScreen({ navigation }) {
                     <Text style={{ color: COLORS.textWhite, fontWeight: '600' }}>Apple</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={{
-                    flex: 1,
-                    height: 50,
-                    borderRadius: RADIUS.md,
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                  }}>
+                  <TouchableOpacity
+                    onPress={() => promptAsync()}
+                    disabled={!request}
+                    style={{
+                      flex: 1,
+                      height: 50,
+                      borderRadius: RADIUS.md,
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      opacity: !request ? 0.5 : 1,
+                    }}
+                  >
                     <Ionicons name="logo-google" size={20} color={COLORS.textWhite} />
                     <Text style={{ color: COLORS.textWhite, fontWeight: '600' }}>Google</Text>
                   </TouchableOpacity>

@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons'
+import * as Location from 'expo-location';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,7 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { COLORS, SPACING, TYPOGRAPHY, RADIUS, GRADIENTS } from '../utils/theme';
-import { swipeAPI, userAPI } from '../utils/api';
+import api, { swipeAPI, userAPI } from '../utils/api';
 import ProfileCard from '../components/ProfileCard';
 import ActionButtons from '../components/ActionButtons';
 import DiscoveryHeader from '../components/DiscoveryHeader';
@@ -49,13 +50,38 @@ export default function HomeScreen({ route, navigation }) {
   const translateY = useSharedValue(0);
 
   useEffect(() => {
-    loadProfiles(zenzMode);
+    const initHomeScreen = async () => {
+      await requestLocation();
+      loadProfiles(zenzMode);
+    };
+    initHomeScreen();
   }, [zenzMode]);
+
+  const requestLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.warn('Location permission denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = location.coords;
+      await userAPI.updateLocation(latitude, longitude);
+      console.log('Location updated:', latitude, longitude);
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
 
   const loadProfiles = async (mode) => {
     try {
       setIsLoading(true);
-      // Pass mode to API if supported, otherwise just fetch regular discovery
+      // Ensure we have coordinates before fetching discovery for best results
+      // Although discovery will fallback to random even without coords
       const response = await userAPI.getDiscovery(mode);
       console.log('Discovery response:', response.data); // Debug log
 

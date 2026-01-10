@@ -86,6 +86,7 @@ api.interceptors.response.use(
 export const authAPI = {
   signup: (data) => api.post('/auth/signup', data),
   login: (email, password) => api.post('/auth/login', { email, password }),
+  googleLogin: (idToken) => api.post('/auth/google', { idToken }),
   logout: () => api.post('/auth/logout'),
   refresh: (refreshToken) =>
     api.post('/auth/refresh', { refreshToken }),
@@ -107,6 +108,7 @@ export const userAPI = {
   getPreferences: () => api.get('/users/preferences'),
   updatePreferences: (data) => api.put('/users/preferences', data),
   updatePushToken: (pushToken) => api.put('/users/push-token', { pushToken }),
+  updateLocation: (latitude, longitude) => api.patch('/users/location', { latitude, longitude }),
   getDiscovery: (mode) => api.get('/users/discovery', { params: { mode } }),
 };
 

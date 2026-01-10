@@ -49,13 +49,16 @@ export default function ChatListScreen({ navigation }) {
           onPress={() => navigation.navigate('ChatDetail', { match: item })}
           style={styles.chatItem}
         >
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('UserProfile', { userId: item.id, matchId: item.matchId })}
+            style={styles.avatarContainer}
+          >
             <Image
               source={{ uri: item.avatar || 'https://via.placeholder.com/150' }}
               style={styles.avatar}
             />
             {isOnline && <View style={styles.onlineBadge} />}
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.chatInfo}>
             <View style={styles.chatHeaderRow}>

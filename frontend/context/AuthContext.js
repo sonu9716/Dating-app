@@ -174,6 +174,29 @@ export function AuthProvider({ children }) {
       }
     },
 
+    googleLogin: async (idToken) => {
+      try {
+        const response = await authAPI.googleLogin(idToken);
+        const { user, token, refreshToken } = response.data;
+
+        await secureStorage.setToken(token);
+        await secureStorage.setRefreshToken(refreshToken);
+
+        socketEmitters.authenticate(token);
+
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+
+        // Register for push notifications
+        registerPushToken();
+
+        return { success: true, user };
+      } catch (error) {
+        const message = error.response?.data?.message || 'Google login failed';
+        dispatch({ type: 'LOGIN_ERROR', payload: message });
+        return { success: false, error: message };
+      }
+    },
+
     logout: async () => {
       try {
         await authAPI.logout();

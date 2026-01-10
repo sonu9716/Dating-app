@@ -1,6 +1,9 @@
 const { pool } = require('../utils/db');
 const bcrypt = require('bcryptjs');
 const { generateToken, generateRefreshToken, verifyToken } = require('../utils/jwt');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client();
 
 exports.signup = async (req, res) => {
     let { email, password, firstName, lastName, username, name, age, gender, bio, interests, location } = req.body;
@@ -156,5 +159,72 @@ exports.logout = async (req, res) => {
     } catch (err) {
         console.error('Logout error:', err.message);
         res.status(500).json({ error: 'Server error during logout' });
+    }
+};
+
+exports.googleAuth = async (req, res) => {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+        return res.status(400).json({ success: false, message: 'ID Token is required' });
+    }
+
+    try {
+        // Verify the token
+        // In production, you'd pass the CLIENT_ID as audience
+        const ticket = await client.verifyIdToken({
+            idToken: idToken,
+            audience: [
+                process.env.GOOGLE_ANDROID_CLIENT_ID,
+                process.env.GOOGLE_IOS_CLIENT_ID,
+                process.env.GOOGLE_WEB_CLIENT_ID
+            ].filter(Boolean)
+        });
+
+        const payload = ticket.getPayload();
+        const { email, given_name, family_name, picture, sub: googleId } = payload;
+
+        // Check if user exists
+        let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+        let user;
+
+        if (userResult.rows.length === 0) {
+            // Create new user if they don't exist
+            const username = email.split('@')[0] + Math.floor(Math.random() * 1000);
+            const newUser = await pool.query(
+                `INSERT INTO users(
+                    email, first_name, last_name, username, photos, verified
+                ) VALUES($1, $2, $3, $4, $5, true)
+                RETURNING *`,
+                [email.toLowerCase(), given_name, family_name, username, [picture]]
+            );
+            user = newUser.rows[0];
+        } else {
+            user = userResult.rows[0];
+        }
+
+        const token = generateToken(user.id);
+        const refreshToken = generateRefreshToken(user.id);
+
+        res.json({
+            success: true,
+            token,
+            refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: `${user.first_name} ${user.last_name}`.trim(),
+                firstName: user.first_name,
+                lastName: user.last_name,
+                username: user.username,
+                photos: user.photos || [],
+                age: user.age,
+                gender: user.gender,
+                interests: user.interests || []
+            }
+        });
+    } catch (err) {
+        console.error('Google Auth error:', err.message);
+        res.status(401).json({ success: false, message: 'Invalid Google Token', error: err.message });
     }
 };
